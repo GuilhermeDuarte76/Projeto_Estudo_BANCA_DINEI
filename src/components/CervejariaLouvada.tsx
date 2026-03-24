@@ -40,6 +40,9 @@ export default function CervejariaLouvada() {
       if (video.duration && isFinite(video.duration)) {
         setScrollHeight(Math.ceil(video.duration * SCROLL_PX_PER_SECOND));
       }
+      // iOS Safari exige play()+pause() para desbloquear a API de seeking (currentTime).
+      // Sem isso, o scrubbing pelo scroll não funciona em dispositivos reais.
+      video.play().then(() => video.pause()).catch(() => {});
     };
     video.addEventListener('loadedmetadata', onMeta);
     if (video.readyState >= 1) onMeta();
