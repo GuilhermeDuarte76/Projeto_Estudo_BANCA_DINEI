@@ -43,12 +43,12 @@ export default function Navbar() {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: EASE }}
-        className={`fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-50 px-4 py-2.5 md:px-6 md:py-3 rounded-full flex items-center gap-3 md:gap-8 transition-all duration-500 ${
+        className={`fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-50 px-4 py-2.5 md:px-6 md:py-3 rounded-full flex items-center gap-3 md:gap-4 transition-all duration-500 ${
           scrolled
             ? 'bg-dark-warm/90 backdrop-blur-xl border border-gold-primary/30 shadow-gold'
             : 'bg-dark-warm/70 backdrop-blur-md border border-gold-primary/20'
         }`}
-        style={{ maxWidth: '720px' }}
+        style={{ maxWidth: '960px' }}
       >
         {/* Logo mark */}
         <button
@@ -64,7 +64,7 @@ export default function Navbar() {
         </button>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-6 ml-auto">
+        <div className="hidden md:flex items-center gap-4 ml-auto">
           {NAV_LINKS.map((link) => (
             <button
               key={link.href}
@@ -74,18 +74,18 @@ export default function Navbar() {
               {link.label}
             </button>
           ))}
-        </div>
 
-        {/* CTA WhatsApp — desktop */}
-        <a
-          href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20fazer%20um%20pedido."
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden md:flex items-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-all duration-300 hover:-translate-y-px hover:shadow-gold flex-shrink-0"
-        >
-          <WhatsappLogoIcon size={14} weight="fill" />
-          Pedido
-        </a>
+          {/* CTA WhatsApp — desktop */}
+          <a
+            href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20fazer%20um%20pedido."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-all duration-300 hover:-translate-y-px hover:shadow-gold flex-shrink-0"
+          >
+            <WhatsappLogoIcon size={14} weight="fill" />
+            Pedido
+          </a>
+        </div>
 
         {/* Tagline — mobile center */}
         <div className="md:hidden flex-1 flex justify-center">
