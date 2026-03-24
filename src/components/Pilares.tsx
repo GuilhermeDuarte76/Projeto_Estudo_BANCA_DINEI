@@ -1,5 +1,9 @@
 import { useRef } from 'react';
 import { motion, useInView, useScroll, useTransform, type Variants } from 'framer-motion';
+import videoDoce from '../assets/doce.mp4';
+import videoVinho from '../assets/vinho.mp4';
+import imgFrios from '../assets/frios.jpg';
+import imgQueijo from '../assets/queijo.jpg';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 import { CheeseIcon, CakeIcon, WineIcon, ArrowRightIcon } from '@phosphor-icons/react';
@@ -41,7 +45,7 @@ const PILARES = [
     subtextColor: 'text-graphite/60',
     ctaClass: 'border border-bordeaux/60 text-bordeaux',
     imageSeed: 'doces-delicatessen',
-    videoSrc: '/src/assets/doce.mp4',
+    videoSrc: videoDoce,
     isWide: false,
     tag: 'Kits gift',
     index: '02',
@@ -62,7 +66,7 @@ const PILARES = [
     subtextColor: 'text-cream/60',
     ctaClass: 'border border-gold-light/60 text-gold-light',
     imageSeed: 'vinhos-curados',
-    videoSrc: '/src/assets/vinho.mp4',
+    videoSrc: videoVinho,
     isWide: false,
     tag: '70+ rótulos',
     index: '03',
@@ -108,13 +112,13 @@ function ScrollImageCrossfade({ className }: { className?: string }) {
   return (
     <div ref={ref} className={`relative w-full h-full ${className ?? ''}`}>
       <motion.img
-        src="/src/assets/frios.jpg"
+        src={imgFrios}
         alt="Frios e tábuas"
         style={{ opacity: friosOpacity }}
         className="absolute inset-0 w-full h-full object-cover"
       />
       <motion.img
-        src="/src/assets/queijo.jpg"
+        src={imgQueijo}
         alt="Queijos"
         style={{ opacity: queijoOpacity }}
         className="absolute inset-0 w-full h-full object-cover"
