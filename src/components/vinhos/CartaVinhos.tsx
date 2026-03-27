@@ -1,25 +1,12 @@
-import { useState, useMemo, useRef, useTransition } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useState, useMemo, useTransition } from 'react';
+import { motion } from 'framer-motion';
+import { WineIcon, StarIcon, WhatsappLogoIcon, CrownIcon, ForkKnifeIcon } from '@phosphor-icons/react';
+import { WINES, COUNTRIES } from '../../data/wines';
+import SectionDivider from '../layout/SectionDivider';
+import WineCard, { FlagImg } from './WineCard';
+import HarmonizacoesModal from './HarmonizacoesModal';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
-import { WineIcon, StarIcon, WhatsappLogoIcon, CrownIcon } from '@phosphor-icons/react';
-import { WINES, COUNTRIES } from '../data/wines';
-import SectionDivider from './SectionDivider';
-
-function FlagImg({ code, country }: { code: string; country: string }) {
-  return (
-    <img
-      src={`https://flagcdn.com/20x15/${code.toLowerCase()}.png`}
-      srcSet={`https://flagcdn.com/40x30/${code.toLowerCase()}.png 2x`}
-      width={20}
-      height={15}
-      alt={country}
-      title={country}
-      className="rounded-[2px] object-cover flex-shrink-0"
-      style={{ imageRendering: 'crisp-edges' }}
-    />
-  );
-}
 
 type WineTypeKey = 'all' | 'tinto' | 'branco' | 'rose' | 'espumante' | 'porto';
 
@@ -32,87 +19,12 @@ const WINE_TYPES: { key: WineTypeKey; label: string; keyword: string; dot: strin
   { key: 'porto',     label: 'Porto',      keyword: 'Porto',     dot: 'bg-purple-700' },
 ];
 
-function getTypeDot(type: string) {
-  for (const { keyword, dot } of WINE_TYPES.slice(1)) {
-    if (type.includes(keyword)) return dot;
-  }
-  return 'bg-cream/30';
-}
-
-function WineCard({ wine, index }: { wine: (typeof WINES)[0]; index: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-40px' });
-  const isEspecial = wine.tier === 'especial';
-  const dotClass = getTypeDot(wine.type);
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay: (index % 8) * 0.05, ease: EASE }}
-      className="group relative"
-    >
-      <div className={`rounded-xl border transition-all duration-300 ${
-        isEspecial
-          ? 'border-gold-light/25 bg-gold-primary/[0.07] hover:border-gold-light/50'
-          : 'border-white/[0.08] bg-white/[0.04] hover:border-white/[0.16]'
-      }`}>
-        <div className="p-4 flex flex-col gap-3">
-
-          {/* Nome */}
-          <div className="flex items-start gap-2">
-            {isEspecial && (
-              <StarIcon size={9} weight="fill" className="text-gold-light flex-shrink-0 mt-0.5" />
-            )}
-            <p className="font-display font-bold text-cream/90 text-[13px] leading-snug line-clamp-2 flex-1">
-              {wine.name}
-            </p>
-          </div>
-
-          {/* Tipo com ponto de cor */}
-          <div className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotClass}`} />
-            <p className="text-cream/45 text-[11px] leading-snug line-clamp-1 font-body">
-              {wine.type}
-            </p>
-          </div>
-
-          {/* Divider */}
-          <div className="h-px bg-white/[0.07]" />
-
-          {/* Rodapé: bandeira + código + preço */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <FlagImg code={wine.countryCode} country={wine.country} />
-              <span className="font-body text-[10px] text-cream/35 tracking-widest uppercase">
-                {wine.countryCode}
-              </span>
-            </div>
-            <p className="font-display font-bold text-gold-light text-sm">
-              R$ {wine.price.toFixed(2).replace('.', ',')}
-            </p>
-          </div>
-
-          {/* Tier badge */}
-          <span className={`self-start type-overline text-[9px] px-2 py-0.5 rounded-full border ${
-            isEspecial
-              ? 'border-gold-light/30 text-gold-light/75'
-              : 'border-white/10 text-cream/30'
-          }`}>
-            {isEspecial ? '★ Especial' : 'Dia a dia'}
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function CartaVinhos() {
   const [activeCountry, setActiveCountry] = useState<string>('ALL');
   const [activeTier, setActiveTier] = useState<'all' | 'dia' | 'especial'>('all');
   const [activeType, setActiveType] = useState<WineTypeKey>('all');
   const [isPending, startTransition] = useTransition();
+  const [showHarmonizacoes, setShowHarmonizacoes] = useState(false);
 
   const filtered = useMemo(() => {
     return WINES.filter((w) => {
@@ -135,7 +47,6 @@ export default function CartaVinhos() {
       className="py-24 px-6 lg:px-16 relative overflow-hidden"
       style={{ background: 'linear-gradient(180deg, #1E0808 0%, #0F0404 100%)' }}
     >
-      {/* Decorative orb */}
       <div
         className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
         style={{
@@ -163,11 +74,18 @@ export default function CartaVinhos() {
               <span className="font-subtitle italic font-normal text-gold-light">Vinhos</span>
             </h2>
           </div>
-          <div className="flex items-end">
+          <div className="flex flex-col items-start gap-5">
             <p className="type-body text-cream/50 text-sm leading-relaxed">
               Mais de 70 rótulos selecionados de Portugal, Argentina, Chile, Itália, França e mais.
               Do cotidiano ao reserva especial.
             </p>
+            <button
+              onClick={() => setShowHarmonizacoes(true)}
+              className="flex items-center gap-2 border border-gold-light/40 text-gold-light hover:bg-gold-light/10 hover:border-gold-light/70 transition-all duration-300 type-overline text-[11px] px-5 py-2.5 rounded-full"
+            >
+              <ForkKnifeIcon size={13} weight="light" />
+              Harmonização
+            </button>
           </div>
         </motion.div>
 
@@ -222,7 +140,7 @@ export default function CartaVinhos() {
             ))}
           </div>
 
-          {/* Country filter — horizontal scroll on mobile */}
+          {/* Country filter */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => startTransition(() => setActiveCountry('ALL'))}
@@ -300,5 +218,7 @@ export default function CartaVinhos() {
         </motion.div>
       </div>
     </section>
+
+    <HarmonizacoesModal isOpen={showHarmonizacoes} onClose={() => setShowHarmonizacoes(false)} />
   );
 }

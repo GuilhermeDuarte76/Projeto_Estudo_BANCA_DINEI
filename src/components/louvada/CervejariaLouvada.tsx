@@ -1,30 +1,28 @@
 import { useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
-import logoLouvada from '../assets/cervejaria-louvada.png';
-import videoLouvada from '../assets/cerveja-scroll.mp4';
+import logoLouvada from '../../assets/cervejaria-louvada.png';
+import videoLouvada from '../../assets/cerveja-scroll.mp4';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 const LOUVADA_GOLD = '#DFA62B';
-/** px de scroll por segundo de vídeo */
 const SCROLL_PX_PER_SECOND = 200;
 
 const CODIGOS_HONRA = ['Devoção', 'Honradez', 'Majestade', 'Tradição', 'Parceria', 'Celebração'];
 
-export default function CervejariaLouvada() {
+export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: boolean }) {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const [scrollHeight, setScrollHeight] = useState(1600);
 
-  /* ── Scroll progress 0→1 mapeado à seção inteira ── */
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end end'],
   });
 
-  /* Hint de "role para avançar" desaparece nos primeiros 15% do scroll */
   const hintOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
 
-  /* Scrubbing: cada mudança de scroll → atualiza currentTime */
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
     const video = videoRef.current;
     if (video && video.duration && isFinite(video.duration)) {
@@ -32,7 +30,6 @@ export default function CervejariaLouvada() {
     }
   });
 
-  /* Calcula a altura da seção com base na duração real do vídeo */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -40,8 +37,6 @@ export default function CervejariaLouvada() {
       if (video.duration && isFinite(video.duration)) {
         setScrollHeight(Math.ceil(video.duration * SCROLL_PX_PER_SECOND));
       }
-      // iOS Safari exige play()+pause() para desbloquear a API de seeking (currentTime).
-      // Sem isso, o scrubbing pelo scroll não funciona em dispositivos reais.
       video.play().then(() => video.pause()).catch(() => {});
     };
     video.addEventListener('loadedmetadata', onMeta);
@@ -51,16 +46,11 @@ export default function CervejariaLouvada() {
 
   return (
     <>
-      {/* ════════════════════════════════════════════════════════════
-          SEÇÃO TRAVADA — o scroll percorre `scrollHeight` px de espaço
-          enquanto o vídeo fica fixo (sticky) e avança quadro a quadro
-      ════════════════════════════════════════════════════════════ */}
-      <section
+      {!hideVideo && <section
         ref={sectionRef}
         id="cervejaria-louvada"
-        style={{ height: `calc(100vh + ${scrollHeight}px)`, position: 'relative' }}
+        style={{ height: `calc(100vh + ${scrollHeight}px)`, position: 'relative', scrollMarginTop: '70px' }}
       >
-        {/* Sticky viewport — permanece visível durante todo o scroll da seção */}
         <div
           style={{
             position: 'sticky',
@@ -70,7 +60,6 @@ export default function CervejariaLouvada() {
             backgroundColor: '#000',
           }}
         >
-          {/* Vídeo fullscreen, sem controles, controlado pelo scroll */}
           <video
             ref={videoRef}
             src={videoLouvada}
@@ -86,7 +75,6 @@ export default function CervejariaLouvada() {
             }}
           />
 
-          {/* Gradiente cinematográfico: topo escuro + base escura */}
           <div
             style={{
               position: 'absolute',
@@ -97,7 +85,6 @@ export default function CervejariaLouvada() {
             }}
           />
 
-          {/* Grain sutil */}
           <div
             style={{
               position: 'absolute',
@@ -110,7 +97,7 @@ export default function CervejariaLouvada() {
             }}
           />
 
-          {/* ── Logo + overline no topo ── */}
+          {/* Logo + overline */}
           <div
             style={{
               position: 'absolute',
@@ -120,7 +107,7 @@ export default function CervejariaLouvada() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              paddingTop: '36px',
+              paddingTop: '80px',
               gap: '12px',
             }}
           >
@@ -144,7 +131,7 @@ export default function CervejariaLouvada() {
             </p>
           </div>
 
-          {/* ── Slogan centro-inferior ── */}
+          {/* Slogan */}
           <div
             style={{
               position: 'absolute',
@@ -187,7 +174,7 @@ export default function CervejariaLouvada() {
             </p>
           </div>
 
-          {/* ── Barra de progresso dourada (acompanha o scroll) ── */}
+          {/* Progress bar */}
           <motion.div
             style={{
               position: 'absolute',
@@ -201,7 +188,7 @@ export default function CervejariaLouvada() {
             }}
           />
 
-          {/* ── Hint "role para avançar" — desaparece ao começar o scroll ── */}
+          {/* Scroll hint */}
           <motion.div
             style={{
               position: 'absolute',
@@ -240,13 +227,47 @@ export default function CervejariaLouvada() {
             </svg>
           </motion.div>
         </div>
-      </section>
+      </section>}
 
-      {/* ════════════════════════════════════════════════════════════
-          CONTEÚDO — aparece após o scroll-lock soltar
-      ════════════════════════════════════════════════════════════ */}
-      <section style={{ backgroundColor: '#000', padding: '90px 40px' }}>
-        {/* Divider ornamental */}
+      {/* Post-scroll content */}
+      {!hideVideo && (
+        <section style={{ backgroundColor: '#000', padding: '60px 40px', display: 'flex', justifyContent: 'center' }}>
+          <motion.button
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: EASE }}
+            onClick={() => { navigate('/bebidas/cerveja'); window.scrollTo({ top: 0 }); }}
+            style={{
+              fontFamily: "'Teko', sans-serif",
+              fontSize: '20px',
+              fontWeight: 400,
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+              color: LOUVADA_GOLD,
+              backgroundColor: 'transparent',
+              border: `1px solid ${LOUVADA_GOLD}`,
+              borderRadius: '20px',
+              padding: '10px 36px 6px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s, color 0.3s',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLButtonElement;
+              el.style.backgroundColor = LOUVADA_GOLD;
+              el.style.color = '#000';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLButtonElement;
+              el.style.backgroundColor = 'transparent';
+              el.style.color = LOUVADA_GOLD;
+            }}
+          >
+            Conhecer a Cervejaria Louvada
+          </motion.button>
+        </section>
+      )}
+      {hideVideo && <section style={{ backgroundColor: '#000', padding: '90px 40px' }}>
         <motion.div
           initial={{ opacity: 0, scaleX: 0.3 }}
           whileInView={{ opacity: 1, scaleX: 1 }}
@@ -268,7 +289,6 @@ export default function CervejariaLouvada() {
         </motion.div>
 
         <div style={{ maxWidth: '1440px', margin: '0 auto' }}>
-          {/* Card de descrição */}
           <motion.div
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -291,7 +311,6 @@ export default function CervejariaLouvada() {
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
               }}
             >
-              {/* Ícone escudo */}
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
                 <div
                   style={{
@@ -339,15 +358,7 @@ export default function CervejariaLouvada() {
                 <span style={{ color: LOUVADA_GOLD }}>honra</span>
               </h3>
 
-              <p
-                style={{
-                  fontFamily: "'Roboto', sans-serif",
-                  fontSize: '16px',
-                  color: '#C4C4C4',
-                  lineHeight: '28px',
-                  marginBottom: '20px',
-                }}
-              >
+              <p style={{ fontFamily: "'Roboto', sans-serif", fontSize: '16px', color: '#C4C4C4', lineHeight: '28px', marginBottom: '20px' }}>
                 A Banca do Dinei e a Cervejaria Louvada compartilham o mesmo código
                 de valores: produto artesanal, processo honesto, ingredientes
                 selecionados e orgulho regional. Fundada em 2014 em Cuiabá–MT, a
@@ -356,15 +367,7 @@ export default function CervejariaLouvada() {
                 tábuas de frios, queijos e embutidos.
               </p>
 
-              <p
-                style={{
-                  fontFamily: "'Roboto', sans-serif",
-                  fontSize: '16px',
-                  color: '#C4C4C4',
-                  lineHeight: '28px',
-                  margin: 0,
-                }}
-              >
+              <p style={{ fontFamily: "'Roboto', sans-serif", fontSize: '16px', color: '#C4C4C4', lineHeight: '28px', margin: 0 }}>
                 Cada cerveja Louvada foi pensada para elevar momentos — e agora
                 você encontra os rótulos selecionados aqui na Banca do Dinei.
                 Celebre com honra, brinde com estilo, honre onde estiver.
@@ -372,19 +375,13 @@ export default function CervejariaLouvada() {
             </div>
           </motion.div>
 
-          {/* Chips Códigos de Honra */}
+          {/* Honor codes */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '48px',
-            }}
+            style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px', marginBottom: '48px' }}
           >
             {CODIGOS_HONRA.map((codigo, i) => (
               <motion.span
@@ -453,20 +450,12 @@ export default function CervejariaLouvada() {
             </a>
           </motion.div>
 
-          {/* Rodapé */}
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.3, ease: EASE }}
-            style={{
-              textAlign: 'center',
-              fontFamily: "'Roboto', sans-serif",
-              fontSize: '12px',
-              color: '#555',
-              letterSpacing: '1px',
-              margin: 0,
-            }}
+            style={{ textAlign: 'center', fontFamily: "'Roboto', sans-serif", fontSize: '12px', color: '#555', letterSpacing: '1px', margin: 0 }}
           >
             Parceria oficial Banca do Dinei × Cervejaria Louvada ·{' '}
             <a
@@ -479,7 +468,7 @@ export default function CervejariaLouvada() {
             </a>
           </motion.p>
         </div>
-      </section>
+      </section>}
     </>
   );
 }

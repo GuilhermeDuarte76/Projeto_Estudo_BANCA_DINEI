@@ -1,24 +1,35 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CrownIcon, WhatsappLogoIcon, MapPinIcon, PhoneIcon } from '@phosphor-icons/react';
 
 const FOOTER_LINKS = [
-  { label: 'Início', href: '#hero' },
-  { label: 'Tábuas', href: '#tabuas' },
-  { label: 'Vinhos', href: '#vinhos' },
-  { label: 'Harmonizações', href: '#harmonizacoes' },
+  { label: 'Início',        href: '/' },
+  { label: 'Tábuas',        href: '/tabuas' },
+  { label: 'Vinhos',        href: '/vinhos' },
+  { label: 'Harmonizações', href: '/vinhos#harmonizacoes' },
 ];
 
 export default function Footer() {
+  const navigate = useNavigate();
+
   const handleLink = (href: string) => {
-    document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+    if (href.includes('#')) {
+      const [path, hash] = href.split('#');
+      navigate(path);
+      setTimeout(() => {
+        document.querySelector(`#${hash}`)?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    } else {
+      navigate(href);
+      window.scrollTo({ top: 0 });
+    }
   };
 
   return (
     <footer id="contato" className="bg-graphite text-cream py-16 px-6 lg:px-16">
       <div className="max-w-[1400px] mx-auto">
-        {/* Main footer grid */}
         <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12 pb-12 border-b border-cream/10">
-          {/* Brand column */}
+          {/* Brand */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -26,7 +37,6 @@ export default function Footer() {
             transition={{ duration: 0.6 }}
             className="flex flex-col gap-6"
           >
-            {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full border border-gold-primary/40 flex items-center justify-center">
                 <CrownIcon size={18} weight="fill" className="text-gold-primary" />
@@ -43,7 +53,6 @@ export default function Footer() {
               Sofisticação e prazer à mesa.
             </p>
 
-            {/* WhatsApp CTA */}
             <a
               href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20fazer%20um%20pedido."
               target="_blank"
@@ -68,7 +77,7 @@ export default function Footer() {
               <button
                 key={link.href}
                 onClick={() => handleLink(link.href)}
-                className="type-body text-cream/50 text-sm hover:text-cream/90 transition-colors duration-300 text-left hover:translate-x-1 transition-transform"
+                className="type-body text-cream/50 text-sm hover:text-cream/90 hover:translate-x-1 transition-all duration-300 text-left"
               >
                 {link.label}
               </button>
@@ -117,7 +126,6 @@ export default function Footer() {
           </motion.div>
         </div>
 
-        {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="type-caption text-cream/30 not-italic text-xs text-center sm:text-left">
             © {new Date().getFullYear()} Banca do Dinei Delicatessen · Todos os direitos reservados

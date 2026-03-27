@@ -38,14 +38,12 @@ export default function MonteSuaTabua() {
         }}
       />
 
-      {/* Decorative circle */}
       <div
         className="absolute right-0 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none"
         style={{ background: 'radial-gradient(circle, rgba(184,134,11,0.06) 0%, transparent 70%)', transform: 'translate(40%, -50%)' }}
       />
 
       <div className="max-w-[1400px] mx-auto relative z-10">
-        {/* Asymmetric split: left big CTA / right steps */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr] gap-10 lg:gap-16 items-center">
           {/* Left */}
           <motion.div
@@ -71,7 +69,6 @@ export default function MonteSuaTabua() {
               Tábuas artesanais montadas com atenção visual para qualquer ocasião.
             </p>
 
-            {/* CTA Button */}
             <div className="flex flex-col sm:flex-row gap-4">
               <a
                 href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20montar%20uma%20t%C3%A1bua%20personalizada."
@@ -94,7 +91,6 @@ export default function MonteSuaTabua() {
               </a>
             </div>
 
-            {/* Address */}
             <div className="pt-4 border-t border-cream/10">
               <p className="type-caption text-cream/40 not-italic text-xs leading-relaxed">
                 Rua Niterói, 924, Loja 1 — Bairro Aparecida<br />
@@ -123,7 +119,6 @@ export default function MonteSuaTabua() {
                   transition={{ delay: 0.2 + i * 0.1, duration: 0.6, ease: EASE }}
                   className="group"
                 >
-                  {/* Double bezel step card */}
                   <div className="p-1 border border-gold-primary/20 rounded-2xl hover:border-gold-primary/40 transition-all duration-400">
                     <div
                       className="flex items-start gap-5 p-6 rounded-[calc(0.75rem-0.25rem)] bg-cream/5 hover:bg-cream/8 transition-colors duration-400"

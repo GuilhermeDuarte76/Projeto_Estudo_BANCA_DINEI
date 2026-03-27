@@ -1,7 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CrownIcon, ArrowDownIcon, WhatsappLogoIcon, StarIcon, MapPinIcon } from '@phosphor-icons/react';
-import taboaFrios from '../assets/taboaFrios.jpg';
-import logo from '../assets/logo.png';
+import taboaFrios from '../../assets/taboaFrios.jpg';
+import logo from '../../assets/logo.png';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -26,6 +27,8 @@ const fadeUp = (delay = 0) => ({
 });
 
 export default function Hero() {
+  const navigate = useNavigate();
+
   return (
     <section
       id="hero"
@@ -98,7 +101,6 @@ export default function Hero() {
 
           {/* CTAs */}
           <motion.div {...fadeUp(0.5)} className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-4">
-            {/* Linha 1: 75/25 */}
             <div className="flex gap-2 lg:contents">
               <a
                 href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20fazer%20um%20pedido."
@@ -114,16 +116,15 @@ export default function Hero() {
               </a>
 
               <button
-                onClick={() => document.querySelector('#tabuas')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => navigate('/tabuas')}
                 className="flex-[1] lg:flex-none flex items-center justify-center gap-2 border border-gold-primary/50 text-gold-light font-body font-bold uppercase tracking-widest px-4 lg:px-8 py-3 rounded-full transition-all duration-300 hover:border-gold-light hover:-translate-y-1 text-xs lg:text-sm"
               >
                 Tábuas
               </button>
             </div>
 
-            {/* Linha 2: Onde nos Encontrar */}
             <button
-              onClick={() => document.querySelector('#locais')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.querySelector('#contato')?.scrollIntoView({ behavior: 'smooth' })}
               className="w-full lg:w-auto flex items-center justify-center gap-2 border border-cream/20 text-cream/50 font-body font-bold uppercase tracking-widest px-4 lg:px-8 py-3 rounded-full transition-all duration-300 hover:border-gold-primary/40 hover:text-gold-light text-xs lg:text-sm"
             >
               <MapPinIcon size={13} weight="fill" />
@@ -152,16 +153,14 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        {/* Right: Image with double-bezel */}
+        {/* Right: Image */}
         <motion.div
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.9, delay: 0.4, ease: EASE }}
           className="hidden lg:block"
         >
-          {/* Outer shell */}
           <div className="relative p-2 bg-gold-primary/5 border border-gold-primary/20 rounded-[2rem] animate-float">
-            {/* Inner core */}
             <div
               className="relative overflow-hidden rounded-[calc(2rem-0.5rem)]"
               style={{ boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.08)' }}
@@ -173,7 +172,6 @@ export default function Hero() {
                 loading="eager"
                 style={{ filter: 'brightness(1.05) contrast(1.05) saturate(1.1)' }}
               />
-              {/* Gradient overlay */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -182,7 +180,6 @@ export default function Hero() {
                 }}
               />
 
-              {/* Price badge floating */}
               <div className="absolute bottom-6 left-6 right-6">
                 <div className="bg-dark-warm/80 backdrop-blur-sm border border-gold-primary/30 rounded-xl p-4 flex items-end justify-between">
                   <div>
