@@ -42,6 +42,7 @@ export default function CartaVinhos() {
   }, []);
 
   return (
+    <>
     <section
       id="vinhos"
       className="py-24 px-6 lg:px-16 relative overflow-hidden"
@@ -220,5 +221,6 @@ export default function CartaVinhos() {
     </section>
 
     <HarmonizacoesModal isOpen={showHarmonizacoes} onClose={() => setShowHarmonizacoes(false)} />
+    </>
   );
 }
