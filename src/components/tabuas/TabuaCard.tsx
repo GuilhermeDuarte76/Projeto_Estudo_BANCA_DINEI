@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion, useInView, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
-import { CrownIcon, WhatsappLogoIcon, PlusIcon } from '@phosphor-icons/react';
+import { CrownIcon, PlusIcon, ShoppingCartIcon, CheckIcon } from '@phosphor-icons/react';
 import { type Tabua } from '../../data/tabuas';
+import { useCart } from '../../context/CartContext';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -14,10 +15,12 @@ interface TabuaCardProps {
 export default function TabuaCard({ tabua, index, scrollImages }: TabuaCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [imgIndex, setImgIndex] = useState(0);
+  const [addedSizeId, setAddedSizeId] = useState<string | null>(null);
   const prevImgIndex = useRef(0);
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
   const { scrollY } = useScroll();
+  const { addItem } = useCart();
 
   useMotionValueEvent(scrollY, 'change', (y) => {
     if (!scrollImages) return;
@@ -31,6 +34,19 @@ export default function TabuaCard({ tabua, index, scrollImages }: TabuaCardProps
   const currentImage = scrollImages ? scrollImages[imgIndex] : tabua.image;
   const firstSize = tabua.sizes[0];
   const hasMultipleSizes = tabua.sizes.length > 1;
+
+  const handleAddSize = (sizeLabel: string, sizeWeight: string, price: number) => {
+    const sizeId = `${sizeLabel}-${sizeWeight}`;
+    addItem({
+      id: `tabua-${tabua.name}-${sizeLabel}`,
+      name: tabua.name,
+      subtitle: `${sizeLabel} · ${sizeWeight}`,
+      price,
+      category: 'tabua',
+    });
+    setAddedSizeId(sizeId);
+    setTimeout(() => setAddedSizeId(null), 1500);
+  };
 
   return (
     <motion.article
@@ -108,18 +124,57 @@ export default function TabuaCard({ tabua, index, scrollImages }: TabuaCardProps
                 <div>
                   <p className="type-overline text-gold-primary text-[10px] mb-2">Tamanhos & preços</p>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {tabua.sizes.map((size) => (
-                      <div
-                        key={size.label}
-                        className="bg-dark-warm/5 rounded-xl p-2.5 border border-gold-primary/10"
-                      >
-                        <p className="type-overline text-graphite text-[10px]">{size.serves || size.label}</p>
-                        <p className="font-subtitle text-graphite/60 text-[11px]">{size.weight}</p>
-                        <p className="font-display font-bold text-gold-primary text-sm mt-1">
-                          R$ {size.price.toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
+                    {tabua.sizes.map((size) => {
+                      const sizeId = `${size.label}-${size.weight}`;
+                      const isAdded = addedSizeId === sizeId;
+                      return (
+                        <div
+                          key={size.label}
+                          className="bg-dark-warm/5 rounded-xl p-2.5 border border-gold-primary/10 flex flex-col gap-1"
+                        >
+                          <p className="type-overline text-graphite text-[10px]">{size.serves || size.label}</p>
+                          <p className="font-subtitle text-graphite/60 text-[11px]">{size.weight}</p>
+                          <div className="flex items-center justify-between mt-0.5">
+                            <p className="font-display font-bold text-gold-primary text-sm">
+                              R$ {size.price.toFixed(2)}
+                            </p>
+                            <button
+                              onClick={() => handleAddSize(size.label, size.weight, size.price)}
+                              className={`flex items-center gap-1 type-overline text-[9px] px-2 py-1 rounded-full border transition-all duration-300 ${
+                                isAdded
+                                  ? 'border-gold-primary/50 bg-gold-primary/15 text-gold-primary'
+                                  : 'border-gold-primary/20 text-graphite/40 hover:border-gold-primary/60 hover:text-gold-primary hover:bg-gold-primary/10'
+                              }`}
+                              aria-label={`Adicionar ${tabua.name} tamanho ${size.label}`}
+                            >
+                              <AnimatePresence mode="wait">
+                                {isAdded ? (
+                                  <motion.span
+                                    key="check"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    exit={{ scale: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                  >
+                                    <CheckIcon size={9} weight="bold" />
+                                  </motion.span>
+                                ) : (
+                                  <motion.span
+                                    key="plus"
+                                    initial={{ scale: 0.7 }}
+                                    animate={{ scale: 1 }}
+                                    exit={{ scale: 0.7 }}
+                                    transition={{ duration: 0.18 }}
+                                  >
+                                    <PlusIcon size={9} weight="bold" />
+                                  </motion.span>
+                                )}
+                              </AnimatePresence>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
@@ -135,16 +190,50 @@ export default function TabuaCard({ tabua, index, scrollImages }: TabuaCardProps
               )}
             </div>
 
-            {/* CTA */}
-            <a
-              href={`https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20pedir%20a%20${encodeURIComponent(tabua.name)}.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-auto flex items-center justify-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-wider text-xs px-5 py-3 rounded-full transition-all duration-300 hover:-translate-y-px hover:shadow-gold active:scale-[0.98]"
-            >
-              <WhatsappLogoIcon size={14} weight="fill" />
-              Pedir agora
-            </a>
+            {/* CTA — para tábua de tamanho único */}
+            {!hasMultipleSizes && (() => {
+              const sizeId = `${firstSize.label}-${firstSize.weight}`;
+              const isAdded = addedSizeId === sizeId;
+              return (
+                <button
+                  onClick={() => handleAddSize(firstSize.label, firstSize.weight, firstSize.price)}
+                  className={`mt-auto flex items-center justify-center gap-2 font-body font-bold uppercase tracking-wider text-xs px-5 py-3 rounded-full transition-all duration-300 active:scale-[0.98] ${
+                    isAdded
+                      ? 'bg-gold-primary/15 border border-gold-primary/40 text-gold-primary'
+                      : 'bg-gradient-gold text-dark-warm hover:-translate-y-px hover:shadow-gold'
+                  }`}
+                  aria-label={`Adicionar ${tabua.name} ao carrinho`}
+                >
+                  <AnimatePresence mode="wait">
+                    {isAdded ? (
+                      <motion.span
+                        key="added"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center gap-2"
+                      >
+                        <CheckIcon size={14} weight="bold" />
+                        Adicionado ao carrinho
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="add"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center gap-2"
+                      >
+                        <ShoppingCartIcon size={14} weight="fill" />
+                        Adicionar ao carrinho
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>

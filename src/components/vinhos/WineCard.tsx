@@ -1,7 +1,8 @@
-import { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
-import { StarIcon } from '@phosphor-icons/react';
+import { useRef, useState } from 'react';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { StarIcon, ShoppingCartIcon, CheckIcon } from '@phosphor-icons/react';
 import { type Wine } from '../../data/wines';
+import { useCart } from '../../context/CartContext';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -45,6 +46,20 @@ export default function WineCard({ wine, index }: WineCardProps) {
   const inView = useInView(ref, { once: true, margin: '-40px' });
   const isEspecial = wine.tier === 'especial';
   const dotClass = getTypeDot(wine.type);
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  const handleAddToCart = () => {
+    addItem({
+      id: `vinho-${wine.name}`,
+      name: wine.name,
+      subtitle: wine.type,
+      price: wine.price,
+      category: 'vinho',
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
 
   return (
     <motion.div
@@ -90,13 +105,53 @@ export default function WineCard({ wine, index }: WineCardProps) {
             </p>
           </div>
 
-          <span className={`self-start type-overline text-[9px] px-2 py-0.5 rounded-full border ${
-            isEspecial
-              ? 'border-gold-light/30 text-gold-light/75'
-              : 'border-white/10 text-cream/30'
-          }`}>
-            {isEspecial ? '★ Especial' : 'Dia a dia'}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className={`type-overline text-[9px] px-2 py-0.5 rounded-full border ${
+              isEspecial
+                ? 'border-gold-light/30 text-gold-light/75'
+                : 'border-white/10 text-cream/30'
+            }`}>
+              {isEspecial ? '★ Especial' : 'Dia a dia'}
+            </span>
+
+            <button
+              onClick={handleAddToCart}
+              className={`flex items-center gap-1 type-overline text-[9px] px-2.5 py-1.5 rounded-full border transition-all duration-300 ${
+                added
+                  ? 'border-gold-light/50 bg-gold-primary/20 text-gold-light'
+                  : 'border-white/10 text-cream/40 hover:border-gold-primary/40 hover:text-gold-light hover:bg-gold-primary/10'
+              }`}
+              aria-label={`Adicionar ${wine.name} ao carrinho`}
+            >
+              <AnimatePresence mode="wait">
+                {added ? (
+                  <motion.span
+                    key="check"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-1"
+                  >
+                    <CheckIcon size={9} weight="bold" />
+                    Adicionado
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="cart"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-1"
+                  >
+                    <ShoppingCartIcon size={9} weight="fill" />
+                    Adicionar
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

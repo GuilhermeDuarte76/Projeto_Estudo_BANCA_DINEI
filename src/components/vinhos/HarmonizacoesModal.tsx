@@ -47,98 +47,126 @@ export default function HarmonizacoesModal({ isOpen, onClose }: HarmonizacoesMod
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handle = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — sem backdrop-blur para evitar custo de GPU */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/80"
             onClick={onClose}
           />
 
           {/* Modal */}
           <motion.div
             key="modal"
-            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+            initial={{ opacity: 0, y: 28, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.97 }}
-            transition={{ duration: 0.35, ease: EASE }}
-            className="fixed inset-x-4 top-[5%] bottom-[5%] z-50 mx-auto max-w-4xl overflow-y-auto rounded-3xl"
-            style={{ background: 'linear-gradient(180deg, #1E0808 0%, #0F0404 100%)' }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.28, ease: EASE }}
+            className="fixed inset-x-4 top-[6%] bottom-[6%] z-50 mx-auto max-w-3xl rounded-3xl overflow-hidden flex flex-col"
+            style={{
+              background: 'linear-gradient(160deg, #1A0606 0%, #0F0404 100%)',
+              willChange: 'transform, opacity',
+            }}
           >
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="sticky top-4 left-full -translate-x-10 z-10 w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-cream/70 hover:text-cream hover:bg-white/20 transition-all duration-200"
-              aria-label="Fechar"
-            >
-              <XIcon size={16} weight="bold" />
-            </button>
+            {/* Gold accent line */}
+            <div
+              className="absolute top-0 left-0 right-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(184,134,11,0.6) 40%, rgba(184,134,11,0.3) 70%, transparent 100%)' }}
+            />
 
-            <div className="px-6 pt-2 pb-10 lg:px-10">
-              {/* Header */}
-              <div className="text-center mb-10">
-                <p className="type-overline text-gold-primary text-[11px] mb-4">Guia de sabores</p>
-                <h2 className="type-h1 text-cream">
-                  Harmonizações<br />
-                  <span className="font-subtitle italic font-normal text-gold-light">perfeitas</span>
-                </h2>
-                <p className="type-body text-cream/50 mt-4 mx-auto max-w-[52ch] leading-relaxed text-sm">
-                  Descubra as combinações ideais entre nossos vinhos e as tábuas artesanais para elevar sua experiência à mesa.
-                </p>
+            {/* Fixed header */}
+            <div className="flex-shrink-0 px-7 pt-8 pb-5 lg:px-10">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="type-overline text-gold-primary text-[10px] mb-2.5">Guia de sabores</p>
+                  <h2 className="type-h2 text-cream leading-tight">
+                    Harmonizações{' '}
+                    <span className="font-subtitle italic font-normal text-gold-light">perfeitas</span>
+                  </h2>
+                  <p className="type-body text-cream/40 mt-2 text-sm leading-relaxed max-w-[44ch]">
+                    Combinações ideais entre nossos vinhos e as tábuas artesanais.
+                  </p>
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 w-9 h-9 rounded-full border border-white/15 bg-white/5 flex items-center justify-center text-cream/50 hover:text-cream hover:bg-white/10 transition-all duration-200"
+                  aria-label="Fechar"
+                >
+                  <XIcon size={14} weight="bold" />
+                </button>
               </div>
 
-              {/* Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div
+                className="mt-6 h-px"
+                style={{ background: 'linear-gradient(90deg, rgba(184,134,11,0.25), transparent)' }}
+              />
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-7 pb-8 lg:px-10">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {HARMONIZACOES.map((item, i) => {
                   const Icon = WINE_ICONS[item.icon] || WineIcon;
                   const colors = WINE_COLORS[item.icon];
 
                   return (
-                    <motion.div
+                    <div
                       key={item.vinho}
-                      initial={{ opacity: 0, y: 24 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}
+                      className={`p-px rounded-2xl bg-gradient-to-br ${colors.bg} border ${colors.border} animate-fade-in-up`}
+                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
                     >
-                      <div className={`p-1.5 bg-gradient-to-br ${colors.bg} border ${colors.border} rounded-[2rem] h-full`}>
-                        <div className="rounded-[calc(2rem-0.375rem)] bg-white/5 p-7 flex flex-col gap-5 h-full">
-                          <div className={`w-12 h-12 rounded-2xl border ${colors.border} flex items-center justify-center bg-white/10`}>
-                            <Icon size={24} weight="light" className={colors.icon} />
+                      <div className="rounded-[calc(1rem-1px)] bg-black/25 p-5 flex flex-col gap-4 h-full">
+                        {/* Icon + title */}
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl border ${colors.border} flex items-center justify-center bg-white/5 flex-shrink-0`}>
+                            <Icon size={20} weight="light" className={colors.icon} />
                           </div>
-
                           <div>
-                            <p className="type-overline text-gold-primary text-[10px] mb-1.5">Harmoniza com</p>
-                            <h3 className="type-h3 text-cream">{item.vinho}</h3>
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            {item.harmoniza.map((h) => (
-                              <div
-                                key={h}
-                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border ${colors.badge}`}
-                              >
-                                <div className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
-                                <span className="type-body text-sm font-body">{h}</span>
-                              </div>
-                            ))}
+                            <p className="type-overline text-[9px] text-cream/35 mb-0.5">Harmoniza com</p>
+                            <h3 className="type-h3 text-cream text-sm">{item.vinho}</h3>
                           </div>
                         </div>
+
+                        {/* Pairings */}
+                        <div className="flex flex-col gap-1.5">
+                          {item.harmoniza.map((h) => (
+                            <div
+                              key={h}
+                              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${colors.badge}`}
+                            >
+                              <div className="w-1 h-1 rounded-full bg-current flex-shrink-0 opacity-60" />
+                              <span className="type-body text-[12px] font-body">{h}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
 
-              <p className="type-caption text-cream/40 not-italic text-sm text-center mt-10">
-                Dica: ao fazer seu pedido, informe o estilo de vinho desejado e sugerimos a tábua ideal para você.
-              </p>
+              <div className="mt-8 flex items-center gap-3">
+                <div className="flex-1 h-px bg-white/8" />
+                <p className="type-caption not-italic text-[11px] text-cream/30 text-center flex-shrink-0">
+                  Informe o estilo desejado — sugerimos a tábua ideal.
+                </p>
+                <div className="flex-1 h-px bg-white/8" />
+              </div>
             </div>
           </motion.div>
         </>

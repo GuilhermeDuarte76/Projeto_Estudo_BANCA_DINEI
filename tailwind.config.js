@@ -37,6 +37,7 @@ export default {
         shimmer: 'shimmer 2s infinite',
         float: 'float 6s ease-in-out infinite',
         marquee: 'marquee 30s linear infinite',
+        'fade-in-up': 'fadeInUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) both',
       },
       keyframes: {
         shimmer: {
@@ -50,6 +51,10 @@ export default {
         marquee: {
           '0%': { transform: 'translateX(0%)' },
           '100%': { transform: 'translateX(-50%)' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(14px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
     },

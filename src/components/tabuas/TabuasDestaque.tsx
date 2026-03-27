@@ -109,7 +109,7 @@ export default function TabuasDestaque() {
                   </p>
                 </div>
                 <a
-                  href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20montar%20uma%20t%C3%A1bua%20personalizada."
+                  href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Vi%20as%20t%C3%A1buas%20no%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20montar%20uma%20t%C3%A1bua%20personalizada."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="self-start flex items-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-wider text-xs px-5 py-3 rounded-full transition-all duration-300 hover:-translate-y-px hover:shadow-gold mt-4"

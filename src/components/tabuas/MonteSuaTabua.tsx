@@ -71,7 +71,7 @@ export default function MonteSuaTabua() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20montar%20uma%20t%C3%A1bua%20personalizada."
+                href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Vi%20as%20t%C3%A1buas%20no%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20montar%20uma%20t%C3%A1bua%20personalizada."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3 bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-gold active:scale-[0.98] text-sm"

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ListIcon, XIcon, ShoppingCartIcon, WhatsappLogoIcon, CaretDownIcon, HouseSimpleIcon } from '@phosphor-icons/react';
+import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon } from '@phosphor-icons/react';
 import logo from '../../assets/logo.png';
+import { useCart } from '../../context/CartContext';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -31,6 +32,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate  = useNavigate();
   const location  = useLocation();
+  const { totalItems, openCart, setMobileMenuOpen } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -40,6 +42,7 @@ export default function Navbar() {
 
   useEffect(() => {
     setMenuOpen(false);
+    setMobileMenuOpen(false);
     setBebidasOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
@@ -49,14 +52,19 @@ export default function Navbar() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  const handleLink = (href: string) => {
+  const closeMenu = () => {
     setMenuOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  const handleLink = (href: string) => {
+    closeMenu();
     setDropdownOpen(false);
     navigate(href);
   };
 
   const handleLogoClick = () => {
-    setMenuOpen(false);
+    closeMenu();
     setDropdownOpen(false);
     if (location.pathname === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -193,15 +201,27 @@ export default function Navbar() {
         </div>
 
         {/* Desktop cart */}
-        <a
-          href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20fazer%20um%20pedido."
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Fazer Pedido"
-          className="hidden md:flex items-center justify-center w-9 h-9 rounded-full bg-gradient-gold text-dark-warm transition-all duration-300 hover:-translate-y-px hover:shadow-gold flex-shrink-0"
+        <button
+          onClick={openCart}
+          title="Meu Carrinho"
+          className="hidden md:flex relative items-center justify-center w-9 h-9 rounded-full bg-gradient-gold text-dark-warm transition-all duration-300 hover:-translate-y-px hover:shadow-gold flex-shrink-0"
         >
           <ShoppingCartIcon size={16} weight="fill" />
-        </a>
+          <AnimatePresence>
+            {totalItems > 0 && (
+              <motion.span
+                key="navbar-badge"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 bg-bordeaux text-cream text-[9px] font-bold rounded-full flex items-center justify-center border border-dark-warm tabular-nums"
+              >
+                {totalItems > 9 ? '9+' : totalItems}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
 
         {/* Mobile tagline / back home */}
         <div className="md:hidden flex-1 flex justify-center">
@@ -236,7 +256,7 @@ export default function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => { const next = !menuOpen; setMenuOpen(next); setMobileMenuOpen(next); }}
           className="md:hidden flex items-center justify-center w-8 h-8 rounded-full border border-gold-primary/30 text-cream/80 hover:border-gold-primary/70 hover:text-gold-light transition-all duration-300"
           aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
         >
@@ -278,7 +298,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
               className="fixed inset-0 z-40 bg-dark-warm/60 backdrop-blur-sm"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => closeMenu()}
             />
 
             <motion.aside
@@ -292,7 +312,7 @@ export default function Navbar() {
               <div className="flex items-center justify-between px-6 py-5 border-b border-gold-primary/15">
                 <img src={logo} alt="Banca do Dinei" className="h-8 w-auto opacity-90" />
                 <button
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => closeMenu()}
                   aria-label="Fechar menu"
                   className="w-9 h-9 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-300"
                 >
@@ -415,19 +435,22 @@ export default function Navbar() {
                     Início
                   </motion.button>
                 )}
-                <motion.a
+                <motion.button
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 14 }}
                   transition={{ delay: 0.46, duration: 0.38 }}
-                  href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20fazer%20um%20pedido."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300 hover:shadow-gold"
+                  onClick={() => { closeMenu(); openCart(); }}
+                  className="relative flex items-center justify-center gap-2.5 w-full bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300 hover:shadow-gold"
                 >
-                  <WhatsappLogoIcon size={15} weight="fill" />
-                  Fazer Pedido
-                </motion.a>
+                  <ShoppingCartIcon size={15} weight="fill" />
+                  Meu Carrinho
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1.5 right-4 min-w-[18px] h-[18px] px-0.5 bg-bordeaux text-cream text-[9px] font-bold rounded-full flex items-center justify-center border border-dark-warm tabular-nums">
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </span>
+                  )}
+                </motion.button>
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

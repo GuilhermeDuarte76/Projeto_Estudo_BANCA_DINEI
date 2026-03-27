@@ -417,7 +417,7 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
             style={{ display: 'flex', justifyContent: 'center', marginBottom: '48px' }}
           >
             <a
-              href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20as%20cervejas%20Louvada%20dispon%C3%ADveis%20na%20Banca%20do%20Dinei."
+              href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Vi%20as%20cervejas%20Louvada%20no%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20saber%20mais%20sobre%20os%20r%C3%B3tulos%20dispon%C3%ADveis."
               target="_blank"
               rel="noopener noreferrer"
               style={{

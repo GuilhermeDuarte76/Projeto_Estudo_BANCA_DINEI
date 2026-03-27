@@ -206,7 +206,7 @@ export default function CartaVinhos() {
                 <h3 className="type-h3 text-cream">Consulte nossa carta completa</h3>
               </div>
               <a
-                href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Gostaria%20de%20consultar%20a%20carta%20completa%20de%20vinhos."
+                href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Vi%20a%20carta%20de%20vinhos%20no%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20saber%20mais%20sobre%20os%20r%C3%B3tulos%20dispon%C3%ADveis."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-wider text-xs px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-px hover:shadow-gold"
