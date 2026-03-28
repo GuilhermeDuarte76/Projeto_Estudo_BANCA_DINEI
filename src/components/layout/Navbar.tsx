@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon } from '@phosphor-icons/react';
+import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon, UserCircleIcon, SignOutIcon } from '@phosphor-icons/react';
 import logo from '../../assets/logo.png';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -30,9 +31,12 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen]         = useState(false);
   const [bebidasOpen, setBebidasOpen]   = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate  = useNavigate();
   const location  = useLocation();
   const { totalItems, openCart, setMobileMenuOpen } = useCart();
+  const { user, isAuthenticated, openAuthModal, signOut } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -51,6 +55,21 @@ export default function Navbar() {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleSignOut = async () => {
+    setUserMenuOpen(false);
+    await signOut();
+  };
 
   const closeMenu = () => {
     setMenuOpen(false);
@@ -197,6 +216,58 @@ export default function Navbar() {
                 {link.label}
               </button>
             )
+          )}
+        </div>
+
+        {/* Desktop user button */}
+        <div ref={userMenuRef} className="hidden md:block relative flex-shrink-0">
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={() => setUserMenuOpen((v) => !v)}
+                title={user?.name}
+                className="flex items-center gap-1.5 px-3 h-9 rounded-full border border-gold-primary/30 text-cream/70 hover:border-gold-primary/60 hover:text-gold-light transition-all duration-300"
+              >
+                <UserCircleIcon size={16} weight="fill" className="text-gold-primary/70" />
+                <span className="type-overline text-[9px] tracking-widest max-w-[80px] truncate">
+                  {user?.name.split(' ')[0]}
+                </span>
+              </button>
+
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: EASE }}
+                    className="absolute top-full right-0 mt-3 bg-dark-warm/95 backdrop-blur-xl border border-gold-primary/25 rounded-2xl py-2 min-w-[180px] shadow-gold overflow-hidden"
+                  >
+                    <div className="absolute -top-[6px] right-4 w-3 h-3 rotate-45 bg-dark-warm border-l border-t border-gold-primary/25" />
+                    <div className="px-4 py-2 border-b border-gold-primary/10 mb-1">
+                      <p className="type-overline text-[9px] text-gold-primary/50 tracking-widest">CONTA</p>
+                      <p className="text-cream/80 text-xs font-body truncate mt-0.5">{user?.email}</p>
+                    </div>
+                    <motion.button
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2.5 type-overline text-[10px] tracking-widest flex items-center gap-2.5 text-cream/50 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200"
+                    >
+                      <SignOutIcon size={13} />
+                      Sair
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          ) : (
+            <button
+              onClick={openAuthModal}
+              title="Entrar / Cadastrar"
+              className="flex items-center gap-1.5 px-3 h-9 rounded-full border border-gold-primary/30 text-cream/70 hover:border-gold-primary/60 hover:text-gold-light transition-all duration-300"
+            >
+              <UserCircleIcon size={16} weight="fill" className="text-gold-primary/50" />
+              <span className="type-overline text-[9px] tracking-widest">Entrar</span>
+            </button>
           )}
         </div>
 
@@ -422,6 +493,43 @@ export default function Navbar() {
 
               {/* Footer drawer */}
               <div className="px-6 py-6 border-t border-gold-primary/15 space-y-3">
+                {/* Auth button mobile */}
+                {isAuthenticated ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 14 }}
+                    transition={{ delay: 0.30, duration: 0.38 }}
+                    className="flex items-center justify-between border border-gold-primary/20 rounded-full px-5 py-3"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <UserCircleIcon size={15} weight="fill" className="text-gold-primary/60 shrink-0" />
+                      <span className="type-overline text-[9px] text-cream/50 tracking-widest truncate">
+                        {user?.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => { closeMenu(); handleSignOut(); }}
+                      className="flex items-center gap-1.5 type-overline text-[9px] text-red-400/70 hover:text-red-400 tracking-widest transition-colors duration-200 shrink-0 ml-3"
+                    >
+                      <SignOutIcon size={12} />
+                      Sair
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 14 }}
+                    transition={{ delay: 0.30, duration: 0.38 }}
+                    onClick={() => { closeMenu(); openAuthModal(); }}
+                    className="flex items-center justify-center gap-2 w-full border border-gold-primary/30 text-cream/60 hover:border-gold-primary/60 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300"
+                  >
+                    <UserCircleIcon size={13} weight="fill" />
+                    Entrar / Cadastrar
+                  </motion.button>
+                )}
+
                 {location.pathname !== '/' && (
                   <motion.button
                     initial={{ opacity: 0, y: 14 }}
