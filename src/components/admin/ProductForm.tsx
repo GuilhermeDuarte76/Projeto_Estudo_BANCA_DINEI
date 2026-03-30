@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XIcon, WarningCircleIcon, UploadSimpleIcon, ImageIcon } from '@phosphor-icons/react'
-import { type Product, type ProductCreateInput, CATEGORIES, uploadImage } from '../../services/admin'
+import { type Product, type ProductCreateInput, CATEGORIES, UNIDADES, uploadImage } from '../../services/admin'
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
@@ -10,8 +10,13 @@ const EMPTY: ProductCreateInput = {
   descricao: '',
   preco: 0,
   categoria: CATEGORIES[0],
+  marca: '',
+  unidadeMedida: 'UN',
+  codigoBarras: '',
+  pesoKg: null,
+  destaque: false,
+  isVisivel: true,
   imagemUrl: '',
-  estoque: 0,
 }
 
 interface Props {
@@ -41,7 +46,6 @@ export default function ProductForm({ open, initial, loading = false, onSave, on
     } else {
       setUploadError(result.message || 'Falha no upload da imagem.')
     }
-    // Reset input so the same file can be re-selected if needed
     e.target.value = ''
   }
 
@@ -54,8 +58,13 @@ export default function ProductForm({ open, initial, loading = false, onSave, on
               descricao: initial.descricao,
               preco: initial.preco,
               categoria: initial.categoria,
+              marca: initial.marca ?? '',
+              unidadeMedida: initial.unidadeMedida || 'UN',
+              codigoBarras: initial.codigoBarras ?? '',
+              pesoKg: initial.pesoKg ?? null,
+              destaque: initial.destaque,
+              isVisivel: initial.isVisivel,
               imagemUrl: initial.imagemUrl,
-              estoque: initial.estoque,
             }
           : EMPTY,
       )
@@ -74,7 +83,6 @@ export default function ProductForm({ open, initial, loading = false, onSave, on
     if (!form.nome.trim()) { setError('Nome é obrigatório.'); return }
     if (!form.categoria) { setError('Categoria é obrigatória.'); return }
     if (form.preco <= 0.01) { setError('Preço deve ser maior que R$ 0,01.'); return }
-    if (form.estoque < 0) { setError('Estoque não pode ser negativo.'); return }
 
     onSave(form)
   }
@@ -178,69 +186,155 @@ export default function ProductForm({ open, initial, loading = false, onSave, on
                   </Field>
                 </div>
 
-                {/* Estoque */}
-                <div className="w-1/2 pr-1.5">
-                  <Field label="Estoque (unid.)">
+                {/* Marca e Unidade */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Marca">
+                    <input
+                      type="text"
+                      placeholder="Ex: Tio João"
+                      value={form.marca ?? ''}
+                      onChange={(e) => set('marca', e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Unidade de medida">
+                    <select
+                      value={form.unidadeMedida}
+                      onChange={(e) => set('unidadeMedida', e.target.value)}
+                      className={`${inputClass} appearance-none cursor-pointer`}
+                    >
+                      {UNIDADES.map((u) => (
+                        <option key={u} value={u} className="bg-dark-warm text-cream">
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {/* Código de barras e Peso */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Código de barras">
+                    <input
+                      type="text"
+                      placeholder="Ex: 7891234560001"
+                      value={form.codigoBarras ?? ''}
+                      onChange={(e) => set('codigoBarras', e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Peso (kg)">
                     <input
                       type="number"
-                      placeholder="0"
+                      placeholder="Ex: 0.5"
                       min={0}
-                      step={1}
-                      value={form.estoque || ''}
-                      onChange={(e) => set('estoque', parseInt(e.target.value) || 0)}
+                      step={0.001}
+                      value={form.pesoKg ?? ''}
+                      onChange={(e) => set('pesoKg', e.target.value ? parseFloat(e.target.value) : null)}
                       className={inputClass}
                     />
                   </Field>
                 </div>
 
+                {/* Checkboxes: Destaque e Visível */}
+                <div className="flex gap-5">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div
+                      onClick={() => set('destaque', !form.destaque)}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                        form.destaque
+                          ? 'bg-gradient-gold border-gold-primary'
+                          : 'bg-white/5 border-gold-primary/25 hover:border-gold-primary/50'
+                      }`}
+                    >
+                      {form.destaque && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="#1A0A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="type-overline text-[10px] text-cream/60 tracking-widest uppercase">Destaque</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div
+                      onClick={() => set('isVisivel', !form.isVisivel)}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                        form.isVisivel
+                          ? 'bg-gradient-gold border-gold-primary'
+                          : 'bg-white/5 border-gold-primary/25 hover:border-gold-primary/50'
+                      }`}
+                    >
+                      {form.isVisivel && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="#1A0A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="type-overline text-[10px] text-cream/60 tracking-widest uppercase">Visível na vitrine</span>
+                  </label>
+                </div>
+
                 {/* Imagem do produto */}
                 <Field label="Imagem do produto">
-                  <div className="flex items-center gap-3">
-                    {/* Preview */}
-                    <div className="w-14 h-14 rounded-xl border border-gold-primary/15 bg-white/5 shrink-0 overflow-hidden flex items-center justify-center">
-                      {form.imagemUrl ? (
-                        <img
-                          src={form.imagemUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        />
-                      ) : (
-                        <ImageIcon size={20} className="text-cream/20" />
-                      )}
-                    </div>
-
-                    {/* Botão de upload */}
-                    <div className="flex-1">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading || loading}
-                        className="w-full py-2.5 px-4 rounded-xl border border-dashed border-gold-primary/30 hover:border-gold-primary/60 text-cream/50 hover:text-cream text-xs transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {uploading ? (
-                          <>
-                            <span className="w-3 h-3 border-2 border-cream/30 border-t-cream rounded-full animate-spin" />
-                            Enviando...
-                          </>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      {/* Preview */}
+                      <div className="w-14 h-14 rounded-xl border border-gold-primary/15 bg-white/5 shrink-0 overflow-hidden flex items-center justify-center">
+                        {form.imagemUrl ? (
+                          <img
+                            src={form.imagemUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
                         ) : (
-                          <>
-                            <UploadSimpleIcon size={13} />
-                            {form.imagemUrl ? 'Trocar imagem' : 'Selecionar imagem'}
-                          </>
+                          <ImageIcon size={20} className="text-cream/20" />
                         )}
-                      </button>
-                      {uploadError && (
-                        <p className="text-red-300 text-[11px] mt-1.5">{uploadError}</p>
-                      )}
+                      </div>
+
+                      {/* Botão de upload */}
+                      <div className="flex-1">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading || loading}
+                          className="w-full py-2.5 px-4 rounded-xl border border-dashed border-gold-primary/30 hover:border-gold-primary/60 text-cream/50 hover:text-cream text-xs transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {uploading ? (
+                            <>
+                              <span className="w-3 h-3 border-2 border-cream/30 border-t-cream rounded-full animate-spin" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <UploadSimpleIcon size={13} />
+                              {form.imagemUrl ? 'Trocar imagem' : 'Selecionar imagem'}
+                            </>
+                          )}
+                        </button>
+                        {uploadError && (
+                          <p className="text-red-300 text-[11px] mt-1.5">{uploadError}</p>
+                        )}
+                      </div>
                     </div>
+                    {/* URL manual */}
+                    <input
+                      type="text"
+                      placeholder="Ou cole uma URL de imagem..."
+                      value={form.imagemUrl}
+                      onChange={(e) => set('imagemUrl', e.target.value)}
+                      className={inputClass}
+                    />
                   </div>
                 </Field>
 

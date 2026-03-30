@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon, UserCircleIcon, SignOutIcon } from '@phosphor-icons/react';
+import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon, UserCircleIcon, SignOutIcon, IdentificationCardIcon, ClipboardTextIcon, GearIcon } from '@phosphor-icons/react';
 import logo from '../../assets/logo.png';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -241,13 +241,37 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.97 }}
                     transition={{ duration: 0.2, ease: EASE }}
-                    className="absolute top-full right-0 mt-3 bg-dark-warm/95 backdrop-blur-xl border border-gold-primary/25 rounded-2xl py-2 min-w-[180px] shadow-gold overflow-hidden"
+                    className="absolute top-full right-0 mt-3 bg-dark-warm/95 backdrop-blur-xl border border-gold-primary/25 rounded-2xl py-2 min-w-[200px] shadow-gold overflow-hidden"
                   >
                     <div className="absolute -top-[6px] right-4 w-3 h-3 rotate-45 bg-dark-warm border-l border-t border-gold-primary/25" />
                     <div className="px-4 py-2 border-b border-gold-primary/10 mb-1">
                       <p className="type-overline text-[9px] text-gold-primary/50 tracking-widest">CONTA</p>
                       <p className="text-cream/80 text-xs font-body truncate mt-0.5">{user?.email}</p>
                     </div>
+                    <motion.button
+                      onClick={() => { setUserMenuOpen(false); navigate('/perfil'); }}
+                      className="w-full text-left px-4 py-2.5 type-overline text-[10px] tracking-widest flex items-center gap-2.5 text-cream/60 hover:text-gold-light hover:bg-gold-primary/8 transition-all duration-200"
+                    >
+                      <IdentificationCardIcon size={13} />
+                      Meu Perfil
+                    </motion.button>
+                    <motion.button
+                      onClick={() => { setUserMenuOpen(false); navigate('/pedidos'); }}
+                      className="w-full text-left px-4 py-2.5 type-overline text-[10px] tracking-widest flex items-center gap-2.5 text-cream/60 hover:text-gold-light hover:bg-gold-primary/8 transition-all duration-200"
+                    >
+                      <ClipboardTextIcon size={13} />
+                      Meus Pedidos
+                    </motion.button>
+                    {user?.role === 'Admin' && (
+                      <motion.button
+                        onClick={() => { setUserMenuOpen(false); navigate('/admin'); }}
+                        className="w-full text-left px-4 py-2.5 type-overline text-[10px] tracking-widest flex items-center gap-2.5 text-gold-light/70 hover:text-gold-light hover:bg-gold-primary/8 transition-all duration-200"
+                      >
+                        <GearIcon size={13} />
+                        Configurações
+                      </motion.button>
+                    )}
+                    <div className="mx-4 my-1 h-px bg-gold-primary/10" />
                     <motion.button
                       onClick={handleSignOut}
                       className="w-full text-left px-4 py-2.5 type-overline text-[10px] tracking-widest flex items-center gap-2.5 text-cream/50 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200"
@@ -495,27 +519,64 @@ export default function Navbar() {
               <div className="px-6 py-6 border-t border-gold-primary/15 space-y-3">
                 {/* Auth button mobile */}
                 {isAuthenticated ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 14 }}
-                    transition={{ delay: 0.30, duration: 0.38 }}
-                    className="flex items-center justify-between border border-gold-primary/20 rounded-full px-5 py-3"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <UserCircleIcon size={15} weight="fill" className="text-gold-primary/60 shrink-0" />
-                      <span className="type-overline text-[9px] text-cream/50 tracking-widest truncate">
-                        {user?.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => { closeMenu(); handleSignOut(); }}
-                      className="flex items-center gap-1.5 type-overline text-[9px] text-red-400/70 hover:text-red-400 tracking-widest transition-colors duration-200 shrink-0 ml-3"
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 14 }}
+                      transition={{ delay: 0.30, duration: 0.38 }}
+                      className="flex items-center justify-between border border-gold-primary/20 rounded-full px-5 py-3"
                     >
-                      <SignOutIcon size={12} />
-                      Sair
-                    </button>
-                  </motion.div>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <UserCircleIcon size={15} weight="fill" className="text-gold-primary/60 shrink-0" />
+                        <span className="type-overline text-[9px] text-cream/50 tracking-widest truncate">
+                          {user?.name}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => { closeMenu(); handleSignOut(); }}
+                        className="flex items-center gap-1.5 type-overline text-[9px] text-red-400/70 hover:text-red-400 tracking-widest transition-colors duration-200 shrink-0 ml-3"
+                      >
+                        <SignOutIcon size={12} />
+                        Sair
+                      </button>
+                    </motion.div>
+                    <motion.button
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 14 }}
+                      transition={{ delay: 0.34, duration: 0.38 }}
+                      onClick={() => { handleLink('/perfil'); }}
+                      className="flex items-center justify-center gap-2 w-full border border-gold-primary/20 text-cream/60 hover:border-gold-primary/50 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300"
+                    >
+                      <IdentificationCardIcon size={13} />
+                      Meu Perfil
+                    </motion.button>
+                    <motion.button
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 14 }}
+                      transition={{ delay: 0.37, duration: 0.38 }}
+                      onClick={() => { handleLink('/pedidos'); }}
+                      className="flex items-center justify-center gap-2 w-full border border-gold-primary/20 text-cream/60 hover:border-gold-primary/50 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300"
+                    >
+                      <ClipboardTextIcon size={13} />
+                      Meus Pedidos
+                    </motion.button>
+                    {user?.role === 'Admin' && (
+                      <motion.button
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 14 }}
+                        transition={{ delay: 0.40, duration: 0.38 }}
+                        onClick={() => { handleLink('/admin'); }}
+                        className="flex items-center justify-center gap-2 w-full border border-gold-primary/30 text-gold-light/70 hover:border-gold-primary/60 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300"
+                      >
+                        <GearIcon size={13} />
+                        Configurações
+                      </motion.button>
+                    )}
+                  </>
                 ) : (
                   <motion.button
                     initial={{ opacity: 0, y: 14 }}

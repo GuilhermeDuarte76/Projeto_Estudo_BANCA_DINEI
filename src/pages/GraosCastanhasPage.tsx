@@ -1,10 +1,11 @@
-import EmDesenvolvimento from '../components/shared/EmDesenvolvimento'
+import CatalogSection from '../components/catalogo/CatalogSection'
 
 export default function GraosCastanhasPage() {
   return (
-    <EmDesenvolvimento
-      titulo="Grãos e Castanhas"
-      descricao="Mix de castanhas, grãos especiais e frutas secas. Uma seleção premium que estará disponível em breve."
+    <CatalogSection
+      titulo="Grãos e"
+      subtituloItalico="Castanhas"
+      categoria="Grãos e Castanhas"
     />
   )
 }

@@ -3,7 +3,7 @@ import { apiFetch, setTokens, clearTokens } from './api'
 export interface TokenResponse {
   accessToken: string
   refreshToken: string
-  expiresAt: string
+  expiresIn: number
 }
 
 export async function registerUser(name: string, email: string, password: string) {

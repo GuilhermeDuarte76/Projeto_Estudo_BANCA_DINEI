@@ -18,6 +18,8 @@ import VinhosBebidasPage from './pages/bebidas/VinhosPage'
 import CervejaPage from './pages/bebidas/CervejaPage'
 import CachacaPage from './pages/bebidas/CachacaPage'
 import NaoAlcoolicosPage from './pages/bebidas/NaoAlcoolicosPage'
+import PerfilPage from './pages/PerfilPage'
+import PedidosPage from './pages/PedidosPage'
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
               <Route path="/bebidas/cerveja" element={<CervejaPage />} />
               <Route path="/bebidas/cachaca" element={<CachacaPage />} />
               <Route path="/bebidas/nao-alcoolicos" element={<NaoAlcoolicosPage />} />
+              <Route path="/perfil" element={<PerfilPage />} />
+              <Route path="/pedidos" element={<PedidosPage />} />
             </Routes>
           </main>
           <Footer />

@@ -1,20 +1,24 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { PackageIcon, ClipboardTextIcon, UsersIcon } from '@phosphor-icons/react'
+import { PackageIcon, ClipboardTextIcon, UsersIcon, TagIcon, StorefrontIcon } from '@phosphor-icons/react'
 import { useAuth } from '../../context/AuthContext'
 import ProductsTab from './ProductsTab'
 import OrdersTab from './OrdersTab'
+import PromotionsTab from './PromotionsTab'
+import StoresTab from './StoresTab'
 import UsersTab from './UsersTab'
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
-type Tab = 'products' | 'orders' | 'users'
+type Tab = 'products' | 'orders' | 'promotions' | 'stores' | 'users'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'products', label: 'Produtos',  icon: <PackageIcon size={16} weight="fill" /> },
-  { id: 'orders',   label: 'Pedidos',   icon: <ClipboardTextIcon size={16} weight="fill" /> },
-  { id: 'users',    label: 'Usuários',  icon: <UsersIcon size={16} weight="fill" /> },
+  { id: 'products',   label: 'Produtos',   icon: <PackageIcon size={16} weight="fill" /> },
+  { id: 'orders',     label: 'Pedidos',    icon: <ClipboardTextIcon size={16} weight="fill" /> },
+  { id: 'promotions', label: 'Promoções',  icon: <TagIcon size={16} weight="fill" /> },
+  { id: 'stores',     label: 'Lojas',      icon: <StorefrontIcon size={16} weight="fill" /> },
+  { id: 'users',      label: 'Usuários',   icon: <UsersIcon size={16} weight="fill" /> },
 ]
 
 export default function AdminPage() {
@@ -45,7 +49,7 @@ export default function AdminPage() {
             Banca do Dinei
           </h1>
           <p className="type-body text-cream/40 text-sm mt-1">
-            Olá, {user.name.split(' ')[0]}. Gerencie produtos, pedidos e usuários.
+            Olá, {user.name.split(' ')[0]}. Gerencie produtos, pedidos, promoções e lojas.
           </p>
         </motion.div>
 
@@ -82,9 +86,11 @@ export default function AdminPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: EASE }}
         >
-          {activeTab === 'products' && <ProductsTab />}
-          {activeTab === 'orders'   && <OrdersTab />}
-          {activeTab === 'users'    && <UsersTab />}
+          {activeTab === 'products'   && <ProductsTab />}
+          {activeTab === 'orders'     && <OrdersTab />}
+          {activeTab === 'promotions' && <PromotionsTab />}
+          {activeTab === 'stores'     && <StoresTab />}
+          {activeTab === 'users'      && <UsersTab />}
         </motion.div>
       </div>
     </section>

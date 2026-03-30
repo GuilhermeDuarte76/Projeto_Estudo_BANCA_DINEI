@@ -1,10 +1,11 @@
-import EmDesenvolvimento from '../components/shared/EmDesenvolvimento'
+import CatalogSection from '../components/catalogo/CatalogSection'
 
 export default function FriosPage() {
   return (
-    <EmDesenvolvimento
+    <CatalogSection
       titulo="Frios"
-      descricao="Nossa seleção de frios artesanais, embutidos e queijos especiais está chegando. Em breve você poderá explorar tudo por aqui."
+      subtituloItalico="selecionados"
+      categoria="Frios"
     />
   )
 }

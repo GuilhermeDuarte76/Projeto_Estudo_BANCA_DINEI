@@ -3,6 +3,7 @@ import { loginUser, registerUser, logoutUser } from '../services/auth'
 import { getAccessToken, clearTokens } from '../services/api'
 
 export interface AuthUser {
+  id: number
   name: string
   email: string
   role: string
@@ -29,6 +30,13 @@ function decodeJwt(token: string): AuthUser | null {
   try {
     const payload = token.split('.')[1]
     const decoded = JSON.parse(atob(payload))
+    const id = parseInt(
+      decoded.sub ||
+      decoded.nameid ||
+      decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+      '0',
+      10,
+    )
     const name =
       decoded.name ||
       decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ||
@@ -41,7 +49,7 @@ function decodeJwt(token: string): AuthUser | null {
       decoded.role ||
       decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
       'Customer'
-    return { name, email, role }
+    return { id, name, email, role }
   } catch {
     return null
   }

@@ -1,18 +1,32 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import {
+  PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon,
+  WarningCircleIcon, EyeIcon, EyeSlashIcon, StarIcon, ClockIcon, XIcon,
+} from '@phosphor-icons/react'
 import {
   type Product,
   type ProductCreateInput,
+  type PriceHistoryEntry,
   getProducts,
   createProduct,
   updateProduct,
   deleteProduct,
+  toggleProductVisibility,
+  getProductPriceHistory,
 } from '../../services/admin'
 import ProductForm from '../../components/admin/ProductForm'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
+
+function formatCurrency(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString('pt-BR')
+}
 
 export default function ProductsTab() {
   const [products, setProducts] = useState<Product[]>([])
@@ -26,13 +40,19 @@ export default function ProductsTab() {
 
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [togglingId, setTogglingId] = useState<number | null>(null)
+
+  // Price history modal
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null)
+  const [history, setHistory] = useState<PriceHistoryEntry[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
     setError('')
     const res = await getProducts()
     if (res.success) {
-      setProducts(res.data ?? [])
+      setProducts(res.data?.items ?? [])
     } else {
       setError(res.message || 'Erro ao carregar produtos.')
     }
@@ -44,7 +64,7 @@ export default function ProductsTab() {
   const handleSave = async (data: ProductCreateInput) => {
     setFormLoading(true)
     const res = editTarget
-      ? await updateProduct(editTarget.id, { ...data, isAtivo: editTarget.isAtivo })
+      ? await updateProduct(editTarget.id, data)
       : await createProduct(data)
     setFormLoading(false)
     if (res.success) {
@@ -63,8 +83,24 @@ export default function ProductsTab() {
     fetchProducts()
   }
 
+  const handleToggleVisibility = async (p: Product) => {
+    setTogglingId(p.id)
+    await toggleProductVisibility(p.id, !p.isVisivel)
+    setTogglingId(null)
+    fetchProducts()
+  }
+
   const openCreate = () => { setEditTarget(null); setFormOpen(true) }
   const openEdit = (p: Product) => { setEditTarget(p); setFormOpen(true) }
+
+  const openHistory = async (p: Product) => {
+    setHistoryProduct(p)
+    setHistoryLoading(true)
+    setHistory([])
+    const res = await getProductPriceHistory(p.id)
+    if (res.success) setHistory(res.data?.items ?? [])
+    setHistoryLoading(false)
+  }
 
   const filtered = products.filter(
     (p) =>
@@ -129,9 +165,11 @@ export default function ProductsTab() {
             <thead>
               <tr className="border-b border-gold-primary/15">
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Nome</th>
+                <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Marca</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Categoria</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Preço</th>
-                <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Estoque</th>
+                <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Un.</th>
+                <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Visível</th>
                 <th className="px-5 py-3.5" />
               </tr>
             </thead>
@@ -139,7 +177,7 @@ export default function ProductsTab() {
               <AnimatePresence>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-cream/30 text-sm font-body">
+                    <td colSpan={7} className="px-5 py-10 text-center text-cream/30 text-sm font-body">
                       {search ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado ainda.'}
                     </td>
                   </tr>
@@ -165,8 +203,19 @@ export default function ProductsTab() {
                           ) : (
                             <div className="w-9 h-9 rounded-lg bg-white/5 border border-gold-primary/10 shrink-0" />
                           )}
-                          <span className="text-cream/90 font-body truncate max-w-[160px]">{p.nome}</span>
+                          <div className="min-w-0">
+                            <span className="text-cream/90 font-body truncate max-w-[160px] block">{p.nome}</span>
+                            {p.destaque && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gold-primary/15 text-gold-light type-overline text-[8px] tracking-widest mt-0.5">
+                                <StarIcon size={8} weight="fill" />
+                                Destaque
+                              </span>
+                            )}
+                          </div>
                         </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-cream/50 font-body text-sm">
+                        {p.marca || <span className="text-cream/20">—</span>}
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="px-2.5 py-1 rounded-full bg-gold-primary/10 text-gold-light type-overline text-[9px] tracking-widest">
@@ -174,15 +223,39 @@ export default function ProductsTab() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-cream/70 font-body tabular-nums">
-                        {p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        {formatCurrency(p.preco)}
+                      </td>
+                      <td className="px-5 py-3.5 text-cream/40 font-body text-xs">
+                        {p.unidadeMedida || 'UN'}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`font-body tabular-nums text-sm ${p.estoque === 0 ? 'text-red-400' : p.estoque <= 5 ? 'text-yellow-400' : 'text-cream/70'}`}>
-                          {p.estoque}
-                        </span>
+                        {p.isVisivel
+                          ? <EyeIcon size={14} className="text-gold-light" title="Visível" />
+                          : <EyeSlashIcon size={14} className="text-cream/25" title="Oculto" />
+                        }
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            onClick={() => openHistory(p)}
+                            title="Histórico de preço"
+                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-200"
+                          >
+                            <ClockIcon size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleVisibility(p)}
+                            disabled={togglingId === p.id}
+                            title={p.isVisivel ? 'Ocultar produto' : 'Tornar visível'}
+                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-200 disabled:opacity-40"
+                          >
+                            {togglingId === p.id
+                              ? <span className="w-3 h-3 border-2 border-cream/30 border-t-cream rounded-full animate-spin" />
+                              : p.isVisivel
+                                ? <EyeSlashIcon size={13} />
+                                : <EyeIcon size={13} />
+                            }
+                          </button>
                           <button
                             onClick={() => openEdit(p)}
                             title="Editar"
@@ -232,6 +305,95 @@ export default function ProductsTab() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* Price history modal */}
+      <AnimatePresence>
+        {historyProduct && (
+          <>
+            <motion.div
+              key="hist-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-[70] bg-black/75"
+              onClick={() => setHistoryProduct(null)}
+            />
+            <motion.div
+              key="hist-modal"
+              initial={{ opacity: 0, scale: 0.94, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 24 }}
+              transition={{ duration: 0.28, ease: EASE }}
+              className="fixed inset-0 z-[71] flex items-center justify-center px-4 py-8 pointer-events-none"
+            >
+              <div
+                className="relative w-full max-w-lg bg-dark-warm border border-gold-primary/25 rounded-3xl shadow-gold pointer-events-auto max-h-[80vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between px-7 pt-7 pb-5 shrink-0 border-b border-gold-primary/10">
+                  <div>
+                    <p className="type-overline text-gold-primary/50 text-[10px] tracking-widest mb-1">Histórico de preço</p>
+                    <h2 className="font-display font-bold text-xl text-cream leading-tight truncate max-w-[320px]">
+                      {historyProduct.nome}
+                    </h2>
+                    <p className="text-cream/40 text-xs font-body mt-0.5">
+                      Preço atual: {formatCurrency(historyProduct.preco)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setHistoryProduct(null)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/50 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-300 shrink-0"
+                  >
+                    <XIcon size={14} />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 px-7 py-5">
+                  {historyLoading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />
+                      ))}
+                    </div>
+                  ) : history.length === 0 ? (
+                    <p className="text-cream/30 text-sm font-body text-center py-8">
+                      Nenhuma alteração de preço registrada.
+                    </p>
+                  ) : (
+                    <div className="rounded-xl border border-gold-primary/10 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gold-primary/10">
+                            <th className="text-left px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Anterior</th>
+                            <th className="text-left px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Novo</th>
+                            <th className="text-left px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {history.map((h) => (
+                            <tr key={h.id} className="border-b border-gold-primary/8 last:border-0">
+                              <td className="px-4 py-2.5 text-cream/40 font-body tabular-nums line-through">
+                                {formatCurrency(h.precoAnterior)}
+                              </td>
+                              <td className="px-4 py-2.5 text-gold-light font-body tabular-nums font-bold">
+                                {formatCurrency(h.precoNovo)}
+                              </td>
+                              <td className="px-4 py-2.5 text-cream/30 font-body text-xs">
+                                {formatDateTime(h.alteradoEm)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -162,7 +162,7 @@ export default function AuthModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[60] bg-black/75"
+            className="fixed inset-0 z-[80] bg-black/75"
             onClick={closeAuthModal}
           />
 
@@ -173,7 +173,7 @@ export default function AuthModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 24 }}
             transition={{ duration: 0.28, ease: EASE }}
-            className="fixed inset-0 z-[61] flex items-center justify-center px-4 pointer-events-none"
+            className="fixed inset-0 z-[81] flex items-center justify-center px-4 pointer-events-none"
           >
             <div
               className="relative w-full max-w-sm bg-dark-warm border border-gold-primary/25 rounded-3xl shadow-gold overflow-hidden pointer-events-auto"
