@@ -24,6 +24,13 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const [scrollHeight, setScrollHeight] = useState(1600);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -203,7 +210,7 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
                 display: 'flex',
                 gap: '28px',
                 whiteSpace: 'nowrap',
-                animation: 'marquee 40s linear infinite',
+                animation: `marquee ${isMobile ? '8s' : '20s'} linear infinite`,
               }}
             >
               {BEER_MARQUEE.map((beer, i) => (
