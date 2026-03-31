@@ -315,10 +315,10 @@ export default function CervejaPage() {
                 /* mobile: opacidade reduzida para integrar ao fundo escuro */
                 opacity: mobile ? 0.92 : 0.93,
                 maskImage: mobile
-                  ? 'radial-gradient(ellipse 87% 75% at 50% 48%, black 6%, rgba(0,0,0,0.78) 25%, rgba(0,0,0,0.28) 49%, rgba(0,0,0,0.06) 63%, transparent 72%)'
+                  ? 'radial-gradient(ellipse 64% 72% at 50% 57%, black 5%, rgba(0,0,0,0.80) 20%, rgba(0,0,0,0.28) 40%, rgba(0,0,0,0.05) 54%, transparent 62%)'
                   : 'radial-gradient(ellipse 56% 78% at 50% 50%, black 8%, rgba(0,0,0,0.85) 28%, rgba(0,0,0,0.45) 52%, rgba(0,0,0,0.10) 66%, transparent 76%)',
                 WebkitMaskImage: mobile
-                  ? 'radial-gradient(ellipse 87% 75% at 50% 48%, black 6%, rgba(0,0,0,0.78) 25%, rgba(0,0,0,0.28) 49%, rgba(0,0,0,0.06) 63%, transparent 72%)'
+                  ? 'radial-gradient(ellipse 64% 72% at 50% 57%, black 5%, rgba(0,0,0,0.80) 20%, rgba(0,0,0,0.28) 40%, rgba(0,0,0,0.05) 54%, transparent 62%)'
                   : 'radial-gradient(ellipse 56% 78% at 50% 50%, black 8%, rgba(0,0,0,0.85) 28%, rgba(0,0,0,0.45) 52%, rgba(0,0,0,0.10) 66%, transparent 76%)',
               }}
             />
