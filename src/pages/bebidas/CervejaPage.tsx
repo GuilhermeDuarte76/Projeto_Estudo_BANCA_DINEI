@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import CervejariaLouvada from '../../components/louvada/CervejariaLouvada';
 import apaVideo from '../../assets/ezgif-3f66b04213e14bc8.mp4';
 
@@ -99,6 +99,99 @@ function MaltIcon() {
   );
 }
 
+/* ── carousel slides ────────────────────────────────────────── */
+
+interface BeerSlide {
+  id: string;
+  video: string;
+  brewery: string;
+  name: string;
+  style: string;
+  aboutStyle: string[];
+  sensory: string[];
+  ibu: { label: string; filled: number };
+  abv: string;
+  temp: string;
+  glasses: { type: 'caldereta' | 'pint'; label: string }[];
+  harmonization: string[];
+  harmonizationShort: string[];
+  ingredients: { label: string; Icon: React.FC }[];
+  packaging: string;
+}
+
+const SLIDES: BeerSlide[] = [
+  {
+    id: 'apa',
+    video: apaVideo,
+    brewery: 'Louvada',
+    name: 'APA',
+    style: 'American Pale Ale',
+    aboutStyle: [
+      'Surgiu nos anos 80, em meio à revolução cervejeira dos EUA',
+      'Apesar de serem lupuladas, não chegam a ser muito amargas',
+      'O estilo está próximo de uma India Pale Ale (IPA), porém a IPA é mais forte e possui lúpulo mais assertivo',
+    ],
+    sensory: [
+      'Aromática, marcante e acobreada',
+      'Aromas que remetem a frutas tropicais',
+      'Cor acobreada',
+    ],
+    ibu: { label: '45 IBU – Médio', filled: 4 },
+    abv: '5,1% vol',
+    temp: '4–8 °C',
+    glasses: [
+      { type: 'caldereta', label: 'Caldereta' },
+      { type: 'pint', label: 'Pint' },
+    ],
+    harmonization: ['Queijos Maturados', 'Embutidos', 'Hambúrgueres com Queijos Fortes'],
+    harmonizationShort: ['Queijos Maturados', 'Embutidos', 'Hambúrgueres c/ Queijos Fortes'],
+    ingredients: [
+      { label: 'Água', Icon: WaterIcon },
+      { label: 'Lúpulo', Icon: HopIngIcon },
+      { label: 'Levedura', Icon: YeastIcon },
+      { label: 'Malte de Cevada', Icon: MaltIcon },
+    ],
+    packaging: 'Garrafa 500 ml e Chopp',
+  },
+];
+
+function CarouselArrow({ dir, onClick, isMobile }: { dir: -1 | 1; onClick: () => void; isMobile: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={dir === -1 ? 'Anterior' : 'Próximo'}
+      style={{
+        position: 'absolute',
+        top: '50%',
+        ...(dir === -1
+          ? { left: isMobile ? 12 : 24 }
+          : { right: isMobile ? 12 : 24 }),
+        transform: 'translateY(-50%)',
+        background: `${GOLD}12`,
+        border: `1px solid ${GOLD}50`,
+        borderRadius: '50%',
+        width: isMobile ? 36 : 42,
+        height: isMobile ? 36 : 42,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        color: GOLD,
+        fontSize: isMobile ? 18 : 22,
+        fontFamily: 'sans-serif',
+        transition: 'background 0.2s, border-color 0.2s',
+        zIndex: 10,
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+      }}
+      onPointerEnter={(e) => { e.currentTarget.style.background = `${GOLD}30`; e.currentTarget.style.borderColor = GOLD; }}
+      onPointerLeave={(e) => { e.currentTarget.style.background = `${GOLD}12`; e.currentTarget.style.borderColor = `${GOLD}50`; }}
+    >
+      {dir === -1 ? '‹' : '›'}
+    </button>
+  );
+}
+
 /* ── slide variants ─────────────────────────────────────────── */
 
 const slideLeft = {
@@ -117,6 +210,21 @@ export default function CervejaPage() {
   const [ended, setEnded] = useState(false);
   const [mobile, setMobile] = useState(window.innerWidth < 900);
   const [progress, setProgress] = useState(0); // 0→1 driven by video currentTime
+  const [showModal, setShowModal] = useState(false);
+
+  /* carousel */
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [slideKey, setSlideKey] = useState(0);
+  const beer = SLIDES[slideIdx];
+
+  const goToSlide = (dir: -1 | 1) => {
+    const next = (slideIdx + dir + SLIDES.length) % SLIDES.length;
+    setSlideIdx(next);
+    setSlideKey(k => k + 1);
+    setEnded(false);
+    setProgress(0);
+    setShowModal(false);
+  };
 
   useEffect(() => {
     const onResize = () => setMobile(window.innerWidth < 900);
@@ -129,11 +237,13 @@ export default function CervejaPage() {
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
+    v.currentTime = 0;
     v.play().catch(() => {
       /* autoplay blocked — show content immediately */
       setEnded(true);
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideKey]);
 
   return (
     <>
@@ -214,22 +324,20 @@ export default function CervejaPage() {
         }}>
 
           {/* ── LEFT ───────────────────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: mobile ? '0 20px' : 0 }}>
+          <div style={{ display: mobile ? 'none' : 'flex', flexDirection: 'column', gap: 18 }}>
 
             {/* estilo */}
             <motion.div custom={0} initial="hidden" animate={ended ? 'visible' : 'hidden'} variants={slideLeft}>
               <Tag>Estilo</Tag>
               <p style={{ fontFamily: "'Roboto', sans-serif", fontSize: 12, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                American Pale Ale
+                {beer.style}
               </p>
             </motion.div>
 
             {/* sobre o estilo */}
             <motion.div custom={1} initial="hidden" animate={ended ? 'visible' : 'hidden'} variants={slideLeft}>
               <Tag>Sobre o Estilo</Tag>
-              <ShieldItem text="Surgiu nos anos 80, em meio à revolução cervejeira dos EUA" />
-              <ShieldItem text="Apesar de serem lupuladas, não chegam a ser muito amargas" />
-              <ShieldItem text="O estilo está próximo de uma India Pale Ale (IPA), porém a IPA é mais forte e possui lúpulo mais assertivo" />
+              {beer.aboutStyle.map((t, i) => <ShieldItem key={i} text={t} />)}
             </motion.div>
 
             {/* copo ideal */}
@@ -237,14 +345,12 @@ export default function CervejaPage() {
               style={{ border: `1px solid ${GOLD}30`, borderRadius: 6, padding: '14px 18px', backgroundColor: `${GOLD}08` }}>
               <Tag>Copo Ideal</Tag>
               <div style={{ display: 'flex', gap: 28, alignItems: 'flex-end' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <GlassIcon type="caldereta" />
-                  <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: '#E0E0E0', letterSpacing: '2px', textTransform: 'uppercase' }}>Caldereta</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <GlassIcon type="pint" />
-                  <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: '#E0E0E0', letterSpacing: '2px', textTransform: 'uppercase' }}>Pint</span>
-                </div>
+                {beer.glasses.map(g => (
+                  <div key={g.type} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                    <GlassIcon type={g.type} />
+                    <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: '#E0E0E0', letterSpacing: '2px', textTransform: 'uppercase' }}>{g.label}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
 
@@ -252,7 +358,7 @@ export default function CervejaPage() {
             <motion.div custom={3} initial="hidden" animate={ended ? 'visible' : 'hidden'} variants={slideLeft}>
               <Tag>Harmonização</Tag>
               <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                {['Queijos Maturados', 'Embutidos', 'Hambúrgueres com Queijos Fortes'].map(item => (
+                {beer.harmonization.map(item => (
                   <div key={item} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, maxWidth: 80 }}>
                     <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', lineHeight: 1.3 }}>{item}</span>
                   </div>
@@ -275,7 +381,7 @@ export default function CervejaPage() {
             {/* ── título overlay sobre o vídeo ── */}
             <div style={{
               position: 'absolute',
-              top: 0,
+              top: '-6%',
               left: '50%',
               transform: 'translateX(-50%)',
               textAlign: 'center',
@@ -287,15 +393,15 @@ export default function CervejaPage() {
                 Cervejaria
               </div>
               <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 'clamp(24px, 4vw, 42px)', fontWeight: 600, letterSpacing: '8px', textTransform: 'uppercase', color: '#FFFFFF', lineHeight: 1 }}>
-                Louvada
+                {beer.brewery}
               </div>
               <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 'clamp(40px, 8vw, 90px)', fontWeight: 700, color: GOLD, lineHeight: 0.85, letterSpacing: '2px' }}>
-                APA
+                {beer.name}
               </div>
             </div>
             <video
               ref={videoRef}
-              src={apaVideo}
+              src={beer.video}
               muted
               playsInline
               preload="auto"
@@ -322,17 +428,86 @@ export default function CervejaPage() {
                   : 'radial-gradient(ellipse 56% 78% at 50% 50%, black 8%, rgba(0,0,0,0.85) 28%, rgba(0,0,0,0.45) 52%, rgba(0,0,0,0.10) 66%, transparent 76%)',
               }}
             />
-          </div>
+
+            {/* ── mobile footer overlay ── */}
+            {mobile && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={ended ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ delay: 0.3, duration: 0.5, ease: EASE }}
+                style={{
+                  position: 'absolute',
+                  bottom: '10%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 8,
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 14,
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, letterSpacing: '3px', textTransform: 'uppercase', color: `${GOLD}90` }}>
+                    Estilo
+                  </div>
+                  <div style={{ fontFamily: "'Roboto', sans-serif", fontSize: 14, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                    {beer.style}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowModal(true)}
+                  style={{
+                    background: `${GOLD}15`,
+                    border: `1px solid ${GOLD}70`,
+                    borderRadius: 20,
+                    padding: '8px 28px',
+                    color: GOLD,
+                    fontFamily: "'Teko', sans-serif",
+                    fontSize: 13,
+                    letterSpacing: '2px',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                  }}
+                >
+                  Mais Informações
+                </button>
+              </motion.div>
+            )}
+            {/* slide indicator dots */}
+            <div style={{
+              position: 'absolute',
+              bottom: mobile ? '4%' : -28,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: 8,
+              zIndex: 10,
+            }}>
+              {SLIDES.map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: i === slideIdx ? 18 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: i === slideIdx ? GOLD : `${GOLD}40`,
+                    transition: 'all 0.3s ease',
+                  }}
+                />
+              ))}
+            </div>          </div>
 
           {/* ── RIGHT ──────────────────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: mobile ? '0 20px' : 0 }}>
+          <div style={{ display: mobile ? 'none' : 'flex', flexDirection: 'column', gap: 18 }}>
 
             {/* características sensoriais */}
             <motion.div custom={0} initial="hidden" animate={ended ? 'visible' : 'hidden'} variants={slideRight}>
               <Tag>Características Sensoriais</Tag>
-              <ShieldItem text="Aromática, marcante e acobreada" />
-              <ShieldItem text="Aromas que remetem a frutas tropicais" />
-              <ShieldItem text="Cor acobreada" />
+              {beer.sensory.map((t, i) => <ShieldItem key={i} text={t} />)}
             </motion.div>
 
             {/* características vitais */}
@@ -361,10 +536,10 @@ export default function CervejaPage() {
                   </div>
                   <div style={{ padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <span style={{ fontFamily: "'Roboto', sans-serif", fontSize: 11, color: '#E0E0E0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                      45 IBU – Médio
+                      {beer.ibu.label}
                     </span>
                     <div style={{ display: 'flex', gap: 3 }}>
-                      {[true, true, true, true, false].map((active, i) => <HopIcon key={i} active={active} />)}
+                      {Array.from({ length: 5 }, (_, i) => <HopIcon key={i} active={i < beer.ibu.filled} />)}
                     </div>
                   </div>
                 </div>
@@ -386,7 +561,7 @@ export default function CervejaPage() {
                   </div>
                   <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontFamily: "'Roboto', sans-serif", fontSize: 11, color: '#E0E0E0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                      5,1% vol
+                      {beer.abv}
                     </span>
                   </div>
                 </div>
@@ -405,7 +580,7 @@ export default function CervejaPage() {
                   </div>
                   <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontFamily: "'Roboto', sans-serif", fontSize: 11, color: '#E0E0E0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                      4–8 °C
+                      {beer.temp}
                     </span>
                   </div>
                 </div>
@@ -416,12 +591,7 @@ export default function CervejaPage() {
             <motion.div custom={2} initial="hidden" animate={ended ? 'visible' : 'hidden'} variants={slideRight}>
               <Tag>Ingredientes</Tag>
               <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                {([
-                  { label: 'Água',           Icon: WaterIcon },
-                  { label: 'Lúpulo',         Icon: HopIngIcon },
-                  { label: 'Levedura',       Icon: YeastIcon },
-                  { label: 'Malte de Cevada', Icon: MaltIcon },
-                ] as { label: string; Icon: React.FC }[]).map(({ label, Icon }) => (
+                {beer.ingredients.map(({ label, Icon }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                     <Icon />
                     <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 10, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', lineHeight: 1.3 }}>{label}</span>
@@ -434,11 +604,15 @@ export default function CervejaPage() {
             <motion.div custom={3} initial="hidden" animate={ended ? 'visible' : 'hidden'} variants={slideRight}>
               <Tag>Embalagem</Tag>
               <p style={{ fontFamily: "'Roboto', sans-serif", fontSize: 12, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                Garrafa 500 ml e Chopp
+                {beer.packaging}
               </p>
             </motion.div>
           </div>
         </div>
+
+        {/* ── carousel arrows ── */}
+        <CarouselArrow dir={-1} onClick={() => goToSlide(-1)} isMobile={mobile} />
+        <CarouselArrow dir={1} onClick={() => goToSlide(1)} isMobile={mobile} />
 
         {/* social handles */}
         <motion.div
@@ -447,10 +621,229 @@ export default function CervejaPage() {
           transition={{ delay: 0.9, duration: 0.6 }}
           style={{ position: 'absolute', bottom: 20, right: 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, zIndex: 6 }}
         >
-          <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: `${GOLD}70`, letterSpacing: '2px' }}>@CERVEJARIALOUGADA</span>
-          <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: `${GOLD}70`, letterSpacing: '2px' }}>LOUVADA.COM.BR</span>
+          <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: `${GOLD}70`, letterSpacing: '2px' }}>@bancadodinei.udi</span>
+          <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: `${GOLD}70`, letterSpacing: '2px' }}>@louvadauberlandia</span>
         </motion.div>
       </section>
+
+      {/* ── mobile info modal ── */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            onClick={() => setShowModal(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              backgroundColor: 'rgba(0,0,0,0.92)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              overflowY: 'auto',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            {/* ambient glow behind modal */}
+            <div style={{
+              position: 'fixed', top: '-20%', left: '50%', transform: 'translateX(-50%)',
+              width: '140%', height: '50%',
+              background: `radial-gradient(ellipse 60% 60% at 50% 0%, ${GOLD}18, transparent 70%)`,
+              pointerEvents: 'none', zIndex: 0,
+            }} />
+
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 60, scale: 0.97 }}
+              transition={{ duration: 0.45, ease: EASE }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                width: '100%',
+                maxWidth: 440,
+                padding: '0 20px 48px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0,
+              }}
+            >
+              {/* ── modal header ── */}
+              <div style={{
+                position: 'sticky', top: 0, zIndex: 10,
+                paddingTop: 18, paddingBottom: 14,
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.95) 60%, transparent)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 10, letterSpacing: '4px', textTransform: 'uppercase', color: `${GOLD}80` }}>
+                    Cervejaria {beer.brewery}
+                  </div>
+                  <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 28, fontWeight: 700, color: GOLD, lineHeight: 1, letterSpacing: '3px' }}>
+                    {beer.name}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${GOLD}40`,
+                    borderRadius: '50%',
+                    width: 38,
+                    height: 38,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#ccc',
+                    fontSize: 16,
+                    fontFamily: 'sans-serif',
+                    flexShrink: 0,
+                    transition: 'background 0.2s, border-color 0.2s',
+                  }}
+                  onPointerEnter={(e) => { e.currentTarget.style.background = `${GOLD}20`; e.currentTarget.style.borderColor = GOLD; }}
+                  onPointerLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = `${GOLD}40`; }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* gold divider */}
+              <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${GOLD}50, transparent)`, marginBottom: 28 }} />
+
+              {/* ── sections ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+                {/* estilo + sobre */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4, ease: EASE }}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '18px 20px' }}>
+                  <Tag>Estilo</Tag>
+                  <p style={{ fontFamily: "'Roboto', sans-serif", fontSize: 14, color: '#F0EAD6', textTransform: 'uppercase', letterSpacing: '2px', margin: '0 0 16px' }}>
+                    {beer.style}
+                  </p>
+                  <div style={{ height: 1, background: `${GOLD}15`, margin: '0 0 14px' }} />
+                  <Tag>Sobre o Estilo</Tag>
+                  {beer.aboutStyle.map((t, i) => <ShieldItem key={i} text={t} />)}
+                </motion.div>
+
+                {/* características vitais */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.4, ease: EASE }}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '18px 20px' }}>
+                  <Tag>Características Vitais</Tag>
+                  <div style={{
+                    border: `1px solid ${GOLD}30`,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    backgroundColor: `${GOLD}06`,
+                  }}>
+                    {/* amargor */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: `1px solid ${GOLD}20` }}>
+                      <div style={{ padding: '12px 16px', borderRight: `1px solid ${GOLD}20`, backgroundColor: `${GOLD}0A`, display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 12, color: GOLD, letterSpacing: '2px', textTransform: 'uppercase' }}>Amargor</span>
+                      </div>
+                      <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <span style={{ fontFamily: "'Roboto', sans-serif", fontSize: 12, color: '#E0E0E0', letterSpacing: '1px', textTransform: 'uppercase' }}>{beer.ibu.label}</span>
+                        <div style={{ display: 'flex', gap: 3 }}>
+                          {Array.from({ length: 5 }, (_, i) => <HopIcon key={i} active={i < beer.ibu.filled} />)}
+                        </div>
+                      </div>
+                    </div>
+                    {/* teor */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: `1px solid ${GOLD}20` }}>
+                      <div style={{ padding: '12px 16px', borderRight: `1px solid ${GOLD}20`, backgroundColor: `${GOLD}0A`, display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 12, color: GOLD, letterSpacing: '2px', textTransform: 'uppercase' }}>Teor Alc.</span>
+                      </div>
+                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'Roboto', sans-serif", fontSize: 12, color: '#E0E0E0', letterSpacing: '1px', textTransform: 'uppercase' }}>{beer.abv}</span>
+                      </div>
+                    </div>
+                    {/* temperatura */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                      <div style={{ padding: '12px 16px', borderRight: `1px solid ${GOLD}20`, backgroundColor: `${GOLD}0A`, display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 12, color: GOLD, letterSpacing: '2px', textTransform: 'uppercase' }}>Temp. Ideal</span>
+                      </div>
+                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'Roboto', sans-serif", fontSize: 12, color: '#E0E0E0', letterSpacing: '1px', textTransform: 'uppercase' }}>{beer.temp}</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* sensoriais */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.4, ease: EASE }}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '18px 20px' }}>
+                  <Tag>Características Sensoriais</Tag>
+                  {beer.sensory.map((t, i) => <ShieldItem key={i} text={t} />)}
+                </motion.div>
+
+                {/* copo ideal + harmonização row */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45, duration: 0.4, ease: EASE }}
+                  style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {/* copo */}
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '16px 14px' }}>
+                    <Tag>Copo Ideal</Tag>
+                    <div style={{ display: 'flex', gap: 18, alignItems: 'flex-end', justifyContent: 'center', marginTop: 8 }}>
+                      {beer.glasses.map(g => (
+                        <div key={g.type} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                          <GlassIcon type={g.type} />
+                          <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 10, color: '#E0E0E0', letterSpacing: '2px', textTransform: 'uppercase' }}>{g.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* harmonização */}
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '16px 14px' }}>
+                    <Tag>Harmonização</Tag>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                      {beer.harmonizationShort.map(item => (
+                        <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: GOLD, flexShrink: 0 }} />
+                          <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 1.3 }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* ingredientes */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.4, ease: EASE }}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '18px 20px' }}>
+                  <Tag>Ingredientes</Tag>
+                  <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'center', marginTop: 8 }}>
+                    {beer.ingredients.map(({ label, Icon }) => (
+                      <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 60 }}>
+                        <div style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}25`, borderRadius: 8, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon />
+                        </div>
+                        <span style={{ fontFamily: "'Teko', sans-serif", fontSize: 10, color: '#E0E0E0', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', lineHeight: 1.3 }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* embalagem */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65, duration: 0.4, ease: EASE }}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${GOLD}18`, borderRadius: 10, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div>
+                    <Tag>Embalagem</Tag>
+                    <p style={{ fontFamily: "'Roboto', sans-serif", fontSize: 13, color: '#F0EAD6', textTransform: 'uppercase', letterSpacing: '1.5px', margin: 0 }}>
+                      {beer.packaging}
+                    </p>
+                  </div>
+                </motion.div>
+
+              </div>
+
+              {/* bottom gold divider */}
+              <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${GOLD}35, transparent)`, marginTop: 28 }} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── existing Louvada partnership content ─────────────── */}
       <CervejariaLouvada hideVideo />
