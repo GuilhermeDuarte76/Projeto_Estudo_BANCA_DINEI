@@ -10,11 +10,27 @@ const SCROLL_PX_PER_SECOND = 200;
 
 const CODIGOS_HONRA = ['Devoção', 'Honradez', 'Majestade', 'Tradição', 'Parceria', 'Celebração'];
 
+const BEER_TYPES = [
+  'Pilsen', 'German Pilsner', 'Hop Lager', 'Vienna', 'Weiss', 'Witbier',
+  'APA', 'IPA', 'NEIPA', 'Double NEIPA', 'Porter', 'Benedita Coffee',
+  'Catharina Sour Amora e Framboesa', 'Catharina Sour Laranja',
+  'Catharina Sour Bergamota', 'Gose Limão', 'Blond Caju', 'Louvada Low',
+  'Hop Lager Zero', 'Barley Wine', 'Coffee Pilsen',
+];
+const BEER_MARQUEE = [...BEER_TYPES, ...BEER_TYPES];
+
 export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: boolean }) {
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const [scrollHeight, setScrollHeight] = useState(1600);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -135,7 +151,7 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
           <div
             style={{
               position: 'absolute',
-              bottom: '60px',
+              bottom: '100px',
               left: 0,
               right: 0,
               display: 'flex',
@@ -174,6 +190,54 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
             </p>
           </div>
 
+          {/* Beer types marquee */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '3px',
+              left: 0,
+              right: 0,
+              overflow: 'hidden',
+              borderTop: `1px solid ${LOUVADA_GOLD}25`,
+              backgroundColor: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(6px)',
+              padding: '8px 0',
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                gap: '28px',
+                whiteSpace: 'nowrap',
+                animation: `marquee ${isMobile ? '8s' : '20s'} linear infinite`,
+              }}
+            >
+              {BEER_MARQUEE.map((beer, i) => (
+                <span
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    fontFamily: "'Teko', sans-serif",
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    letterSpacing: '3px',
+                    textTransform: 'uppercase',
+                    color: `${LOUVADA_GOLD}99`,
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="6" height="6" viewBox="0 0 6 6" fill={LOUVADA_GOLD} opacity={0.4}>
+                    <circle cx="3" cy="3" r="3" />
+                  </svg>
+                  {beer}
+                </span>
+              ))}
+            </div>
+          </div>
+
           {/* Progress bar */}
           <motion.div
             style={{
@@ -192,7 +256,7 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
           <motion.div
             style={{
               position: 'absolute',
-              bottom: '14px',
+              bottom: '48px',
               left: '50%',
               x: '-50%',
               display: 'flex',
