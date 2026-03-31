@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CervejariaLouvada from '../../components/louvada/CervejariaLouvada';
-import apaVideo from '../../assets/ezgif-3f66b04213e14bc8.mp4';
+
+const apaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/ezgif-3f66b04213e14bc8.mp4';
 
 const BG      = '#000000';
 const GOLD    = '#DFA62B';
@@ -209,8 +210,15 @@ export default function CervejaPage() {
   const videoRef    = useRef<HTMLVideoElement>(null);
   const [ended, setEnded] = useState(false);
   const [mobile, setMobile] = useState(window.innerWidth < 900);
-  const [progress, setProgress] = useState(0); // 0→1 driven by video currentTime
   const [showModal, setShowModal] = useState(false);
+
+  /* progress driven by rAF — no React re-renders */
+  const progressRef   = useRef(0);
+  const amberKeyRef   = useRef<HTMLDivElement>(null);
+  const amberHazeRef  = useRef<HTMLDivElement>(null);
+  const floorGlowRef  = useRef<HTMLDivElement>(null);
+  const centreLiftRef = useRef<HTMLDivElement>(null);
+  const rafId         = useRef(0);
 
   /* carousel */
   const [slideIdx, setSlideIdx] = useState(0);
@@ -222,8 +230,17 @@ export default function CervejaPage() {
     setSlideIdx(next);
     setSlideKey(k => k + 1);
     setEnded(false);
-    setProgress(0);
+    progressRef.current = 0;
+    applyProgress(0);
     setShowModal(false);
+  };
+
+  /* apply progress to lighting layers via DOM (no re-render) */
+  const applyProgress = (p: number) => {
+    if (amberKeyRef.current)   amberKeyRef.current.style.opacity   = String(0.10 + p * 0.90);
+    if (amberHazeRef.current)  amberHazeRef.current.style.opacity  = String(p);
+    if (floorGlowRef.current)  floorGlowRef.current.style.opacity  = String(0.3 + p * 0.70);
+    if (centreLiftRef.current) centreLiftRef.current.style.opacity = String(p);
   };
 
   useEffect(() => {
@@ -242,6 +259,21 @@ export default function CervejaPage() {
       /* autoplay blocked — show content immediately */
       setEnded(true);
     });
+
+    /* rAF loop for smooth progress — avoids onTimeUpdate jank */
+    const tick = () => {
+      if (v.duration) {
+        const p = v.currentTime / v.duration;
+        if (Math.abs(p - progressRef.current) > 0.002) {
+          progressRef.current = p;
+          applyProgress(p);
+        }
+      }
+      rafId.current = requestAnimationFrame(tick);
+    };
+    rafId.current = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(rafId.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideKey]);
 
@@ -261,42 +293,42 @@ export default function CervejaPage() {
         }} />
 
         {/* Amber key/rim – top-right desktop / top-center mobile */}
-        <div style={{
+        <div ref={amberKeyRef} style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: mobile
             ? 'radial-gradient(ellipse 110% 50% at 50% -2%, rgba(255,160,40,0.28), transparent 65%)'
             : 'radial-gradient(ellipse 65% 55% at 105% -5%, rgba(255,160,40,0.30), transparent 60%)',
-          opacity: 0.10 + progress * 0.90,
+          opacity: 0.10,
           transition: 'opacity 0.35s ease',
         }} />
 
         {/* Amber haze bloom */}
-        <div style={{
+        <div ref={amberHazeRef} style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: mobile
             ? 'radial-gradient(ellipse 120% 55% at 50% 5%, rgba(255,130,20,0.18), transparent 68%)'
             : 'radial-gradient(ellipse 80% 60% at 90% 5%, rgba(255,130,20,0.20), transparent 65%)',
-          opacity: progress,
+          opacity: 0,
           transition: 'opacity 0.55s ease',
         }} />
 
         {/* Floor glow – base reflection: 88% desktop / 46% mobile (vídeo fica no topo da seção) */}
-        <div style={{
+        <div ref={floorGlowRef} style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: mobile
             ? 'radial-gradient(ellipse 80% 8% at 50% 46%, rgba(180,120,40,0.28), transparent 70%)'
             : 'radial-gradient(ellipse 38% 14% at 50% 88%, rgba(180,120,40,0.22), transparent 70%)',
-          opacity: 0.3 + progress * 0.70,
+          opacity: 0.3,
           transition: 'opacity 0.5s ease',
         }} />
 
         {/* Centre lift */}
-        <div style={{
+        <div ref={centreLiftRef} style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: mobile
             ? 'radial-gradient(ellipse 90% 45% at 50% 25%, rgba(255,155,50,0.05), transparent 70%)'
             : 'radial-gradient(ellipse 50% 60% at 50% 50%, rgba(255,155,50,0.04), transparent 70%)',
-          opacity: progress,
+          opacity: 0,
           transition: 'opacity 0.5s ease',
         }} />
 
@@ -405,16 +437,14 @@ export default function CervejaPage() {
               muted
               playsInline
               preload="auto"
-              onTimeUpdate={() => {
-                const v = videoRef.current;
-                if (v && v.duration) setProgress(v.currentTime / v.duration);
-              }}
               onEnded={() => setEnded(true)}
               style={{
                 width: '100%',
                 maxHeight: mobile ? '70vh' : '82vh',
                 objectFit: 'contain',
                 display: 'block',
+                willChange: 'opacity',
+                transform: 'translateZ(0)',  /* force GPU layer */
                 /* screen: preto do vídeo = transparente, só os pixels iluminados sobrevivem */
                 mixBlendMode: 'screen',
                 filter: mobile ? 'blur(0.5px)' : 'blur(0.6px)',
