@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon,
   WarningCircleIcon, EyeIcon, EyeSlashIcon, StarIcon, ClockIcon, XIcon,
+  CheckCircleIcon,
 } from '@phosphor-icons/react'
 import {
   type Product,
@@ -37,6 +38,16 @@ export default function ProductsTab() {
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Product | null>(null)
   const [formLoading, setFormLoading] = useState(false)
+  const [formServerError, setFormServerError] = useState('')
+
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast({ type, message })
+    toastTimer.current = setTimeout(() => setToast(null), 4500)
+  }
 
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -63,14 +74,26 @@ export default function ProductsTab() {
 
   const handleSave = async (data: ProductCreateInput) => {
     setFormLoading(true)
+    setFormServerError('')
     const res = editTarget
       ? await updateProduct(editTarget.id, data)
       : await createProduct(data)
     setFormLoading(false)
+
     if (res.success) {
       setFormOpen(false)
       setEditTarget(null)
       fetchProducts()
+      showToast('success', res.message || (editTarget ? 'Produto atualizado com sucesso.' : 'Produto criado com sucesso.'))
+    } else {
+      const raw = res as unknown as Record<string, unknown>
+      let msg = res.message
+      if (!msg && raw.errors && typeof raw.errors === 'object') {
+        const msgs = Object.values(raw.errors as Record<string, string[]>).flat()
+        msg = msgs.join(' ')
+      }
+      if (!msg && typeof raw.title === 'string') msg = raw.title
+      setFormServerError(msg || 'Erro ao salvar produto. Tente novamente.')
     }
   }
 
@@ -292,8 +315,9 @@ export default function ProductsTab() {
         open={formOpen}
         initial={editTarget}
         loading={formLoading}
+        serverError={formServerError}
         onSave={handleSave}
-        onClose={() => { setFormOpen(false); setEditTarget(null) }}
+        onClose={() => { setFormOpen(false); setEditTarget(null); setFormServerError('') }}
       />
 
       <ConfirmDialog
@@ -305,6 +329,41 @@ export default function ProductsTab() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* Toast feedback */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key="toast"
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-body max-w-sm w-full pointer-events-auto ${
+              toast.type === 'success'
+                ? 'bg-dark-warm border-emerald-500/30'
+                : 'bg-dark-warm border-red-500/30'
+            }`}
+            role="status"
+          >
+            <span className={`shrink-0 ${toast.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+              {toast.type === 'success'
+                ? <CheckCircleIcon size={18} weight="fill" />
+                : <WarningCircleIcon size={18} weight="fill" />
+              }
+            </span>
+            <span className={toast.type === 'success' ? 'text-cream/90' : 'text-red-200'}>
+              {toast.message}
+            </span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-auto shrink-0 text-cream/30 hover:text-cream/70 transition-colors duration-200"
+            >
+              <XIcon size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Price history modal */}
       <AnimatePresence>

@@ -27,27 +27,42 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
+// Singleton promise to prevent multiple concurrent refresh attempts
+let refreshPromise: Promise<string | null> | null = null
+
 async function tryRefreshToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) return null
+  if (refreshPromise) return refreshPromise
+
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) return null
+
+    try {
+      const res = await fetch(`${API_URL}/api/Auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      })
+      const json = await res.json()
+      if (json.success && json.data) {
+        setTokens(json.data.accessToken, json.data.refreshToken)
+        return json.data.accessToken
+      }
+    } catch {
+      // ignore
+    }
+
+    clearTokens()
+    // Notify AuthContext that the session expired
+    window.dispatchEvent(new Event('auth:session-expired'))
+    return null
+  })()
 
   try {
-    const res = await fetch(`${API_URL}/api/Auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    })
-    const json = await res.json()
-    if (json.success && json.data) {
-      setTokens(json.data.accessToken, json.data.refreshToken)
-      return json.data.accessToken
-    }
-  } catch {
-    // ignore
+    return await refreshPromise
+  } finally {
+    refreshPromise = null
   }
-
-  clearTokens()
-  return null
 }
 
 export async function apiFetch<T>(

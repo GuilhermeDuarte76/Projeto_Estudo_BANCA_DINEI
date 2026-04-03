@@ -23,11 +23,12 @@ interface Props {
   open: boolean
   initial?: Product | null
   loading?: boolean
+  serverError?: string
   onSave: (data: ProductCreateInput) => void
   onClose: () => void
 }
 
-export default function ProductForm({ open, initial, loading = false, onSave, onClose }: Props) {
+export default function ProductForm({ open, initial, loading = false, serverError, onSave, onClose }: Props) {
   const [form, setForm] = useState<ProductCreateInput>(EMPTY)
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -340,7 +341,7 @@ export default function ProductForm({ open, initial, loading = false, onSave, on
 
                 {/* Erro */}
                 <AnimatePresence>
-                  {error && (
+                  {(error || serverError) && (
                     <motion.div
                       initial={{ opacity: 0, y: -6, height: 0 }}
                       animate={{ opacity: 1, y: 0, height: 'auto' }}
@@ -350,7 +351,7 @@ export default function ProductForm({ open, initial, loading = false, onSave, on
                     >
                       <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs font-body">
                         <WarningCircleIcon size={14} weight="fill" className="shrink-0" />
-                        {error}
+                        {error || serverError}
                       </div>
                     </motion.div>
                   )}
