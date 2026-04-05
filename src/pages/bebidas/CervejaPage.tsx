@@ -2,6 +2,8 @@ import { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CervejariaLouvada from '../../components/louvada/CervejariaLouvada';
 
+const novaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/Video_Generation_Complete1-ezgif.com-reverse-video.mp4';
+
 const apaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/ezgif-3f66b04213e14bc8.mp4';
 
 const BG      = '#000000';
@@ -47,10 +49,12 @@ function HopIcon({ active }: { active: boolean }) {
   );
 }
 
-function GlassIcon({ type }: { type: 'caldereta' | 'pint' }) {
-  const path = type === 'caldereta'
-    ? 'M8 5 H28 L25 44 H11 Z'
-    : 'M6 5 H30 L28 44 H8 Z';
+function GlassIcon({ type }: { type: 'caldereta' | 'pint' | 'pilsen' | 'lager' }) {
+  const path =
+    type === 'caldereta' ? 'M8 5 H28 L25 44 H11 Z' :
+    type === 'pint'      ? 'M6 5 H30 L28 44 H8 Z'  :
+    type === 'pilsen'    ? 'M12 5 H24 L22 44 H14 Z' :
+    /* lager */            'M9 5 H27 L24 44 H12 Z';
   return (
     <svg width="36" height="48" viewBox="0 0 36 48" fill="none">
       <path d={path} stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" fill="rgba(255,255,255,0.07)" />
@@ -113,11 +117,12 @@ interface BeerSlide {
   ibu: { label: string; filled: number };
   abv: string;
   temp: string;
-  glasses: { type: 'caldereta' | 'pint'; label: string }[];
+  glasses: { type: 'caldereta' | 'pint' | 'pilsen' | 'lager'; label: string }[];
   harmonization: string[];
   harmonizationShort: string[];
   ingredients: { label: string; Icon: React.FC }[];
   packaging: string;
+  blushColor: string; // RGB triplet, e.g. '40,90,255'
 }
 
 const SLIDES: BeerSlide[] = [
@@ -153,6 +158,41 @@ const SLIDES: BeerSlide[] = [
       { label: 'Malte de Cevada', Icon: MaltIcon },
     ],
     packaging: 'Garrafa 500 ml e Chopp',
+    blushColor: '40,90,255',
+  },
+  {
+    id: 'vienna',
+    video: novaVideo,
+    brewery: 'Louvada',
+    name: 'Vienna',
+    style: 'Vienna',
+    aboutStyle: [
+      'Criado em Vienna, na Áustria, se tornou muito popular no México, EUA e na América do Sul',
+      'Muito similar aos estilos Oktoberfest e Märzen, apesar de menos intensa',
+      'Possui carbonatação moderada e teor alcoólico que varia entre 4,7% e 5,5%',
+    ],
+    sensory: [
+      'Equilíbrio entre o malte e o lúpulo',
+      'Suave dulçor de biscoito ao final',
+      'Cor âmbar',
+    ],
+    ibu: { label: '25 IBU – Médio', filled: 3 },
+    abv: '5,4% vol',
+    temp: '4–8 °C',
+    glasses: [
+      { type: 'pilsen', label: 'Pilsen' },
+      { type: 'lager', label: 'Lager' },
+    ],
+    harmonization: ['Queijos Fortes', 'Carnes Vermelhas', 'Hambúrgueres'],
+    harmonizationShort: ['Queijos Fortes', 'Carnes Vermelhas', 'Hambúrgueres'],
+    ingredients: [
+      { label: 'Água', Icon: WaterIcon },
+      { label: 'Lúpulo', Icon: HopIngIcon },
+      { label: 'Levedura', Icon: YeastIcon },
+      { label: 'Malte de Cevada', Icon: MaltIcon },
+    ],
+    packaging: 'Garrafa 500 ml e Chopp',
+    blushColor: '200,18,18',
   },
 ];
 
@@ -288,8 +328,8 @@ export default function CervejaPage() {
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: mobile
-            ? 'radial-gradient(ellipse 100% 35% at 50% 48%, rgba(40,90,255,0.14), transparent 70%)'
-            : 'radial-gradient(ellipse 70% 60% at -5% 110%, rgba(40,90,255,0.18), transparent 65%)',
+            ? `radial-gradient(ellipse 100% 35% at 50% 48%, rgba(${beer.blushColor},0.14), transparent 70%)`
+            : `radial-gradient(ellipse 70% 60% at -5% 110%, rgba(${beer.blushColor},0.18), transparent 65%)`,
         }} />
 
         {/* Amber key/rim – top-right desktop / top-center mobile */}
