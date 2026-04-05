@@ -263,16 +263,21 @@ export default function CervejaPage() {
   /* carousel */
   const [slideIdx, setSlideIdx] = useState(0);
   const [slideKey, setSlideKey] = useState(0);
+  const [fading, setFading] = useState(false);
   const beer = SLIDES[slideIdx];
 
   const goToSlide = (dir: -1 | 1) => {
-    const next = (slideIdx + dir + SLIDES.length) % SLIDES.length;
-    setSlideIdx(next);
-    setSlideKey(k => k + 1);
-    setEnded(false);
-    progressRef.current = 0;
-    applyProgress(0);
-    setShowModal(false);
+    setFading(true);
+    setTimeout(() => {
+      const next = (slideIdx + dir + SLIDES.length) % SLIDES.length;
+      setSlideIdx(next);
+      setSlideKey(k => k + 1);
+      setEnded(false);
+      progressRef.current = 0;
+      applyProgress(0);
+      setShowModal(false);
+      setFading(false);
+    }, 250);
   };
 
   /* apply progress to lighting layers via DOM (no re-render) */
@@ -382,6 +387,8 @@ export default function CervejaPage() {
 
         {/* 3-column grid */}
         <div style={{
+          opacity: fading ? 0 : 1,
+          transition: 'opacity 0.25s ease',
           display: 'grid',
           gridTemplateColumns: mobile ? '1fr' : '1fr auto 1fr',
           alignItems: 'center',
