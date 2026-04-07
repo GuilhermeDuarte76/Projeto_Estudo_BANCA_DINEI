@@ -168,7 +168,7 @@ function PedidoCard({ pedido, index }: { pedido: Pedido; index: number }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PedidosPage() {
-  const { user, isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

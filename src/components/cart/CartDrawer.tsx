@@ -84,8 +84,8 @@ export default function CartDrawer() {
     const res = await createPedido({
       enderecoEntregaId: selectedDelivery === 'entrega' ? (selectedAddress?.id ?? null) : null,
       formaPagamento: selectedPayment ?? undefined,
-      itens: items.map(item => ({
-        produtoId: item.produtoId,
+      itens: items.filter(item => item.produtoId != null).map(item => ({
+        produtoId: item.produtoId as number,
         quantidade: item.quantity,
         ...(item.promocaoId != null && { promocaoId: item.promocaoId }),
       })),

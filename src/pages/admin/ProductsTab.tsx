@@ -253,8 +253,8 @@ export default function ProductsTab() {
                       </td>
                       <td className="px-5 py-3.5">
                         {p.isVisivel
-                          ? <EyeIcon size={14} className="text-gold-light" title="Visível" />
-                          : <EyeSlashIcon size={14} className="text-cream/25" title="Oculto" />
+                          ? <EyeIcon size={14} className="text-gold-light" />
+                          : <EyeSlashIcon size={14} className="text-cream/25" />
                         }
                       </td>
                       <td className="px-5 py-3.5">

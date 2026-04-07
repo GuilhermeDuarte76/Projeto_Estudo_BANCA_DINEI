@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, t
 
 export interface CartItem {
   id: string;
-  produtoId: number;
+  produtoId?: number;
   name: string;
   subtitle: string;
   price: number;
