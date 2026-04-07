@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://46.202.149.63',
+        target: 'https://api.bancadodineiudi.com.br',
         changeOrigin: true,
         secure: false, // desabilita verificação SSL (certificado autoassinado)
       },
