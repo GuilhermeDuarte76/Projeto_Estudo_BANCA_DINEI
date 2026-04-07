@@ -1,10 +1,11 @@
-import EmDesenvolvimento from '../components/shared/EmDesenvolvimento'
+import CatalogSection from '../components/catalogo/CatalogSection'
 
 export default function DocesPage() {
   return (
-    <EmDesenvolvimento
+    <CatalogSection
       titulo="Doces"
-      descricao="Chocolates, geleias e doces artesanais selecionados com carinho. Esta seção estará disponível em breve."
+      subtituloItalico="artesanais"
+      categoria="Doces"
     />
   )
 }
