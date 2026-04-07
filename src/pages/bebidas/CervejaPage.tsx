@@ -6,6 +6,8 @@ const novaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/v
 
 const apaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/ezgif-3f66b04213e14bc8.mp4';
 
+const hopLagerVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/Video_Generation_Complete2-ezgif.com-reverse-video.mp4';
+
 const BG      = '#000000';
 const GOLD    = '#DFA62B';
 const HDR_BG  = '#6B5C4E';
@@ -193,6 +195,40 @@ const SLIDES: BeerSlide[] = [
     ],
     packaging: 'Garrafa 500 ml e Chopp',
     blushColor: '200,18,18',
+  },
+  {
+    id: 'hop-lager',
+    video: hopLagerVideo,
+    brewery: 'Louvada',
+    name: 'Hop Lager',
+    style: 'American Lager',
+    aboutStyle: [
+      'A fermentação do estilo Lager surgiu na Alemanha, quase como uma dissidência da Ale',
+      'Cerveja fermentada e armazenada em baixas temperaturas',
+      'De alta drinkability, preferencialmente deve ser consumida a breve tempo e a temperaturas mais baixas (4–6°C)',
+    ],
+    sensory: [
+      'Sinta o delicioso sabor do lúpulo',
+      'Cerveja leve e refrescante',
+      'Cor amarelo',
+    ],
+    ibu: { label: '25 IBU – Médio', filled: 3 },
+    abv: '4,8% vol',
+    temp: '4–6 °C',
+    glasses: [
+      { type: 'caldereta', label: 'Caldereta' },
+      { type: 'pint', label: 'Pint' },
+    ],
+    harmonization: ['Churrasco', 'Queijos Envelhecidos', 'Hambúrgueres'],
+    harmonizationShort: ['Churrasco', 'Queijos Envelhecidos', 'Hambúrgueres'],
+    ingredients: [
+      { label: 'Água', Icon: WaterIcon },
+      { label: 'Lúpulo', Icon: HopIngIcon },
+      { label: 'Levedura', Icon: YeastIcon },
+      { label: 'Malte de Cevada', Icon: MaltIcon },
+    ],
+    packaging: 'Long Neck 355 ml, Garrafa 500 ml e Chopp',
+    blushColor: '50,190,50',
   },
 ];
 
