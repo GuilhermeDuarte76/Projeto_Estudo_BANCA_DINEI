@@ -34,6 +34,9 @@ export interface Product {
   imagemUrl: string
   isAtivo: boolean
   isVisivel: boolean
+  sabores?: string
+  tipos?: string
+  nacionalidade?: { id: number; nome: string; imagemUrl: string } | null
   criadoEm: string
   atualizadoEm: string
   promocaoVigente?: PromocaoVigente | null
@@ -41,21 +44,38 @@ export interface Product {
 
 export type ProductCreateInput = {
   nome: string
-  descricao: string
+  descricao: string | null
   preco: number
   categoria: string
-  marca?: string
+  marca: string
   unidadeMedida: string
-  codigoBarras?: string
+  codigoBarras?: string | null
   pesoKg?: number | null
+  imagemUrl: string | null
   destaque: boolean
-  isVisivel: boolean
-  imagemUrl: string
+  nacionalidadeId?: number | null
+  sabores?: string | null
+  tipos?: string | null
+  isVisivel?: boolean
 }
 
 export type ProductUpdateInput = ProductCreateInput
 
-export const UNIDADES = ['UN', 'KG', 'G', 'L', 'ML', 'CX', 'PCT', 'DZ']
+export const UNIDADES = ['UN', 'KG', 'G', 'LT', 'ML', 'CX', 'PC', 'DZ', 'MT', 'CM', 'M²']
+
+export const UNIDADES_OPTIONS = [
+  { value: 'UN', label: 'UN — Unidade' },
+  { value: 'KG', label: 'KG — Quilograma' },
+  { value: 'G', label: 'G — Grama' },
+  { value: 'LT', label: 'LT — Litro' },
+  { value: 'ML', label: 'ML — Mililitro' },
+  { value: 'CX', label: 'CX — Caixa' },
+  { value: 'PC', label: 'PC — Pacote' },
+  { value: 'DZ', label: 'DZ — Dúzia' },
+  { value: 'MT', label: 'MT — Metro' },
+  { value: 'CM', label: 'CM — Centímetro' },
+  { value: 'M2', label: 'M² — Metro quadrado' },
+] as const
 
 export interface PriceHistoryEntry {
   id: number
@@ -122,17 +142,38 @@ export const getPublicProducts = (params?: PublicProductsParams) => {
 
 // ── Catálogo — Filtros ────────────────────────────────────────────────────────
 
+export interface NacionalidadeSimples {
+  id: number
+  nome: string
+  imagemUrl: string
+}
+
 export interface CatalogFilters {
   marcas: string[]
   categorias: string[]
   tipos: string[]
   sabores: string[]
   unidadesMedida: string[]
-  nacionalidades: { id: number; nome: string; imagemUrl: string }[]
+  nacionalidades: NacionalidadeSimples[]
 }
 
 export const getCatalogFilters = () =>
   apiFetch<CatalogFilters>('/api/catalogo/filtros')
+
+export const getCategorias = () =>
+  apiFetch<string[]>('/api/catalogo/categorias')
+
+export const getMarcas = () =>
+  apiFetch<string[]>('/api/catalogo/marcas')
+
+export const getSabores = () =>
+  apiFetch<string[]>('/api/catalogo/sabores')
+
+export const getTipos = () =>
+  apiFetch<string[]>('/api/catalogo/tipos')
+
+export const getNacionalidades = () =>
+  apiFetch<NacionalidadeSimples[]>('/api/nacionalidades')
 
 // ── Produtos — Admin ──────────────────────────────────────────────────────────
 

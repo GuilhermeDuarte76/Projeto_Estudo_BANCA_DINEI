@@ -254,7 +254,7 @@ export default function ProductsTab() {
       setFormOpen(false)
       setEditTarget(null)
       refetch()
-      showToast('success', res.message || (editTarget ? 'Produto atualizado.' : 'Produto criado.'))
+      showToast('success', res.message || 'Produto salvo com sucesso')
     } else {
       const raw = res as unknown as Record<string, unknown>
       let msg = res.message
@@ -263,7 +263,7 @@ export default function ProductsTab() {
         msg = msgs.join(' ')
       }
       if (!msg && typeof raw.title === 'string') msg = raw.title
-      setFormServerError(msg || 'Erro ao salvar produto. Tente novamente.')
+      setFormServerError(msg || 'Ocorreu um erro inesperado. Tente novamente.')
     }
   }
 
