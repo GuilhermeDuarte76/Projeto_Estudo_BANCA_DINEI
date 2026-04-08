@@ -114,7 +114,7 @@ export default function PromotionsTab() {
     setProdutoSearch('')
     const [vinculadosRes, todosRes] = await Promise.all([
       getPromocaoProdutos(p.id),
-      getProducts(1, 200),
+      getProducts({ page: 1, pageSize: 200 }),
     ])
     if (vinculadosRes.success) setProdutosVinculados(vinculadosRes.data ?? [])
     if (todosRes.success) setTodosOsProdutos(todosRes.data?.items ?? [])
