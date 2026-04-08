@@ -91,16 +91,55 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
             }}
           />
 
+          {/* Radial vignette — fades video edges into background */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
               background:
-                'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.75) 100%)',
+                'radial-gradient(ellipse 60% 55% at 50% 50%, transparent 30%, rgba(0,0,0,0.65) 60%, rgba(0,0,0,0.95) 100%)',
               pointerEvents: 'none',
             }}
           />
 
+          {/* Top / bottom gradient overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.0) 28%, rgba(0,0,0,0.0) 62%, rgba(0,0,0,0.88) 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Left edge fade */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: '22%',
+              background: 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 50%, transparent 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Right edge fade */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: '22%',
+              background: 'linear-gradient(to left, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 50%, transparent 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Noise grain */}
           <div
             style={{
               position: 'absolute',
@@ -108,7 +147,7 @@ export default function CervejariaLouvada({ hideVideo = false }: { hideVideo?: b
               backgroundImage:
                 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
               backgroundSize: '200px',
-              opacity: 0.03,
+              opacity: 0.05,
               pointerEvents: 'none',
             }}
           />
