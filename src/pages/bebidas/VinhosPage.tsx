@@ -9,14 +9,13 @@ import {
   Check as CheckIcon,
   Tag as TagIcon,
   Crown as CrownIcon,
-  WhatsappLogo as WhatsappLogoIcon,
   CaretDown,
 } from '@phosphor-icons/react'
 import { apiFetch } from '../../services/api'
 import { useCart } from '../../context/CartContext'
 import SectionDivider from '../../components/layout/SectionDivider'
 import HarmonizacoesModal from '../../components/vinhos/HarmonizacoesModal'
-import { type ProdutoPublico, type PromocaoResumo } from '../../components/catalogo/ProdutoCard'
+import { type ProdutoPublico } from '../../components/catalogo/ProdutoCard'
 
 /* ── Generic wine‑bottle SVG (no brand / no label) ─────────────────── */
 const WINE_BOTTLE_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(
