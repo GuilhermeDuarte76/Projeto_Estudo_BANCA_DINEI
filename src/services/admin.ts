@@ -120,10 +120,40 @@ export const getPublicProducts = (params?: PublicProductsParams) => {
   return apiFetch<Product[]>(`/api/produtos${qs ? `?${qs}` : ''}`)
 }
 
+// ── Catálogo — Filtros ────────────────────────────────────────────────────────
+
+export interface CatalogFilters {
+  marcas: string[]
+  categorias: string[]
+  tipos: string[]
+  sabores: string[]
+  unidadesMedida: string[]
+  nacionalidades: { id: number; nome: string; imagemUrl: string }[]
+}
+
+export const getCatalogFilters = () =>
+  apiFetch<CatalogFilters>('/api/catalogo/filtros')
+
 // ── Produtos — Admin ──────────────────────────────────────────────────────────
 
-export const getProducts = (page = 1, pageSize = 10) =>
-  apiFetch<PagedResult<Product>>(`/api/admin/produtos?page=${page}&pageSize=${pageSize}`)
+export interface GetProductsParams {
+  page?: number
+  pageSize?: number
+  categoria?: string
+  marca?: string
+  busca?: string
+  destaque?: boolean
+}
+
+export const getProducts = (params: GetProductsParams = {}) => {
+  const { page = 1, pageSize = 50, categoria, marca, busca, destaque } = params
+  const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  if (categoria) q.set('categoria', categoria)
+  if (marca) q.set('marca', marca)
+  if (busca) q.set('busca', busca)
+  if (destaque !== undefined) q.set('destaque', String(destaque))
+  return apiFetch<PagedResult<Product>>(`/api/admin/produtos?${q}`)
+}
 
 export const createProduct = (data: ProductCreateInput) =>
   apiFetch<Product>('/api/admin/produtos', { method: 'POST', body: JSON.stringify(data) })

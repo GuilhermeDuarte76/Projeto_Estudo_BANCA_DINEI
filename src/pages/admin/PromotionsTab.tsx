@@ -199,24 +199,93 @@ export default function PromotionsTab() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Mobile: Card list */}
       {!loading && !error && (
-        <div className="overflow-x-auto rounded-2xl border border-gold-primary/15">
+        <div className="md:hidden space-y-2">
+          {filtered.length === 0 ? (
+            <div className="py-14 text-center text-cream/30 text-sm font-body">
+              {search ? 'Nenhuma promoção encontrada.' : 'Nenhuma promoção cadastrada ainda.'}
+            </div>
+          ) : (
+            filtered.map((p, i) => {
+              const status = getStatus(p)
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
+                  className="rounded-2xl border border-gold-primary/12 bg-white/3 overflow-hidden"
+                >
+                  <div className="px-4 pt-4 pb-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-cream/90 font-body font-medium text-sm">{p.nome}</p>
+                        {p.descricao && (
+                          <p className="text-cream/35 text-xs mt-0.5 truncate">{p.descricao}</p>
+                        )}
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full type-overline text-[9px] tracking-widest shrink-0 ${status.cls}`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-full bg-gold-primary/10 text-gold-light type-overline text-[9px] tracking-widest">
+                        {formatDesconto(p)} {p.tipoDesconto === 'Percentual' ? 'off' : 'desconto'}
+                      </span>
+                      <span className="text-cream/35 text-xs font-body">
+                        {formatDate(p.dataInicio)} → {formatDate(p.dataFim)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center border-t border-gold-primary/8 px-4 py-2 gap-1">
+                    <button
+                      onClick={() => openProdutosModal(p)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-cream/45 hover:text-gold-light hover:bg-white/5 transition-all duration-200 text-xs font-body"
+                    >
+                      <TagIcon size={13} />
+                      Produtos
+                    </button>
+                    <div className="ml-auto flex items-center gap-1">
+                      <button
+                        onClick={() => openEdit(p)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gold-primary/20 text-cream/50 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200"
+                      >
+                        <PencilSimpleIcon size={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(p)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-red-500/20 text-cream/40 hover:text-red-400 hover:border-red-500/50 transition-all duration-200"
+                      >
+                        <TrashIcon size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {/* Desktop: Table */}
+      {!loading && !error && (
+        <div className="hidden md:block overflow-x-auto rounded-2xl border border-gold-primary/15">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gold-primary/15">
+              <tr className="border-b border-gold-primary/15 bg-white/2">
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Nome</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Desconto</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Período</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Status</th>
-                <th className="px-5 py-3.5" />
+                <th className="px-5 py-3.5 w-28" />
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-cream/30 text-sm font-body">
+                    <td colSpan={5} className="px-5 py-12 text-center text-cream/30 text-sm font-body">
                       {search ? 'Nenhuma promoção encontrada.' : 'Nenhuma promoção cadastrada ainda.'}
                     </td>
                   </tr>
@@ -226,22 +295,21 @@ export default function PromotionsTab() {
                     return (
                       <motion.tr
                         key={p.id}
-                        initial={{ opacity: 0, y: 8 }}
+                        initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        transition={{ delay: i * 0.03, duration: 0.25, ease: EASE }}
+                        transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
                         className="border-b border-gold-primary/8 last:border-0 hover:bg-white/3 transition-colors duration-200 group"
                       >
                         <td className="px-5 py-3.5">
-                          <p className="text-cream/90 font-body truncate max-w-[180px]">{p.nome}</p>
+                          <p className="text-cream/90 font-body truncate max-w-[200px]">{p.nome}</p>
                           {p.descricao && (
-                            <p className="text-cream/30 text-xs truncate max-w-[180px] mt-0.5">{p.descricao}</p>
+                            <p className="text-cream/30 text-xs truncate max-w-[200px] mt-0.5">{p.descricao}</p>
                           )}
                         </td>
                         <td className="px-5 py-3.5">
                           <span className="px-2.5 py-1 rounded-full bg-gold-primary/10 text-gold-light type-overline text-[9px] tracking-widest whitespace-nowrap">
-                            {p.tipoDesconto === 'Percentual' ? '% ' : 'R$ '}
-                            {formatDesconto(p)}
+                            {formatDesconto(p)} {p.tipoDesconto === 'Percentual' ? 'off' : 'desconto'}
                           </span>
                         </td>
                         <td className="px-5 py-3.5">

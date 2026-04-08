@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { XIcon, WarningCircleIcon, ArrowRightIcon, ClipboardTextIcon } from '@phosphor-icons/react'
+import {
+  XIcon, WarningCircleIcon, ArrowRightIcon, ClipboardTextIcon, ArrowsClockwiseIcon,
+  CaretRightIcon,
+} from '@phosphor-icons/react'
 import {
   type Pedido,
   type PedidoStatus,
@@ -27,26 +30,36 @@ const STATUS_LABEL: Record<PedidoStatus, string> = {
 }
 
 const STATUS_COLOR: Record<PedidoStatus, string> = {
-  Pendente: 'bg-yellow-500/15 text-yellow-300',
+  Pendente:   'bg-yellow-500/15 text-yellow-300',
   Confirmado: 'bg-blue-500/15 text-blue-300',
-  EmPreparo: 'bg-orange-500/15 text-orange-300',
-  AEntregar: 'bg-purple-500/15 text-purple-300',
-  Entregue: 'bg-green-500/15 text-green-300',
-  Cancelado: 'bg-red-500/15 text-red-300',
+  EmPreparo:  'bg-orange-500/15 text-orange-300',
+  AEntregar:  'bg-purple-500/15 text-purple-300',
+  Entregue:   'bg-emerald-500/15 text-emerald-300',
+  Cancelado:  'bg-red-500/15 text-red-300',
+}
+
+const STATUS_DOT: Record<PedidoStatus, string> = {
+  Pendente:   'bg-yellow-400',
+  Confirmado: 'bg-blue-400',
+  EmPreparo:  'bg-orange-400',
+  AEntregar:  'bg-purple-400',
+  Entregue:   'bg-emerald-400',
+  Cancelado:  'bg-red-400',
 }
 
 const NEXT_STATUS: Record<PedidoStatus, PedidoStatus[]> = {
-  Pendente: ['Confirmado', 'Cancelado'],
+  Pendente:   ['Confirmado', 'Cancelado'],
   Confirmado: ['EmPreparo', 'Cancelado'],
-  EmPreparo: ['AEntregar', 'Cancelado'],
-  AEntregar: ['Entregue'],
-  Entregue: [],
-  Cancelado: [],
+  EmPreparo:  ['AEntregar', 'Cancelado'],
+  AEntregar:  ['Entregue'],
+  Entregue:   [],
+  Cancelado:  [],
 }
 
 function StatusBadge({ status }: { status: PedidoStatus }) {
   return (
-    <span className={`px-2.5 py-1 rounded-full type-overline text-[9px] tracking-widest whitespace-nowrap ${STATUS_COLOR[status]}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full type-overline text-[9px] tracking-widest whitespace-nowrap ${STATUS_COLOR[status]}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[status]}`} />
       {STATUS_LABEL[status]}
     </span>
   )
@@ -94,6 +107,12 @@ export default function OrdersTab() {
     (p) => statusFilter === 'Todos' || p.status === statusFilter,
   )
 
+  // Count per status for filter badges
+  const countByStatus = pedidos.reduce((acc, p) => {
+    acc[p.status] = (acc[p.status] || 0) + 1
+    return acc
+  }, {} as Partial<Record<PedidoStatus, number>>)
+
   const openDetail = (p: Pedido) => {
     setSelectedPedido(p)
     setNovoStatus('')
@@ -132,25 +151,48 @@ export default function OrdersTab() {
   const isTerminal = proximosStatus.length === 0
 
   return (
-    <div className="space-y-6">
-      {/* Status filter pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {ALL_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setStatusFilter(f)}
-            className={`px-4 py-2 rounded-full type-overline text-[10px] tracking-widest whitespace-nowrap transition-all duration-300 shrink-0 ${
-              statusFilter === f
-                ? 'bg-gradient-gold text-dark-warm font-bold shadow-gold'
-                : 'border border-gold-primary/20 text-cream/50 hover:border-gold-primary/40 hover:text-cream/80'
-            }`}
-          >
-            {f === 'Todos' ? 'Todos' : STATUS_LABEL[f as PedidoStatus]}
-          </button>
-        ))}
+    <div className="space-y-5">
+
+      {/* ── Status filter pills with counts ───────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {ALL_FILTERS.map((f) => {
+          const isActive = statusFilter === f
+          const count = f === 'Todos'
+            ? pedidos.length
+            : (countByStatus[f as PedidoStatus] ?? 0)
+          return (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full type-overline text-[9px] tracking-widest whitespace-nowrap transition-all duration-200 shrink-0 ${
+                isActive
+                  ? 'bg-gradient-gold text-dark-warm font-bold shadow-gold'
+                  : 'border border-gold-primary/20 text-cream/50 hover:border-gold-primary/40 hover:text-cream/80'
+              }`}
+            >
+              {f === 'Todos' ? 'Todos' : STATUS_LABEL[f as PedidoStatus]}
+              {count > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold ${
+                  isActive ? 'bg-dark-warm/25 text-dark-warm' : 'bg-white/10 text-cream/60'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+
+        <button
+          onClick={fetchPedidos}
+          disabled={loading}
+          title="Atualizar"
+          className="ml-auto w-8 h-8 shrink-0 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/40 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200 disabled:opacity-40"
+        >
+          <ArrowsClockwiseIcon size={13} className={loading ? 'animate-spin' : ''} />
+        </button>
       </div>
 
-      {/* Error */}
+      {/* ── Error ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -165,46 +207,91 @@ export default function OrdersTab() {
         )}
       </AnimatePresence>
 
-      {/* Loading skeleton */}
+      {/* ── Loading skeleton ──────────────────────────────────────── */}
       {loading && (
         <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-14 rounded-2xl bg-white/5 animate-pulse" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-16 rounded-2xl bg-white/5 animate-pulse" />
           ))}
         </div>
       )}
 
-      {/* Empty state */}
+      {/* ── Empty state ───────────────────────────────────────────── */}
       {!loading && !error && pedidos.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
           <div className="w-16 h-16 rounded-full bg-gold-primary/10 border border-gold-primary/20 flex items-center justify-center">
             <ClipboardTextIcon size={28} weight="fill" className="text-gold-primary/50" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-xl text-cream mb-1">Nenhum pedido encontrado</h3>
+            <h3 className="font-display font-bold text-xl text-cream mb-1">Nenhum pedido</h3>
             <p className="type-body text-cream/40 text-sm">Os pedidos dos clientes aparecerão aqui.</p>
           </div>
         </div>
       )}
 
-      {/* Table */}
+      {/* ── Mobile: Card list ─────────────────────────────────────── */}
       {!loading && !error && pedidos.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-gold-primary/15">
+        <div className="md:hidden space-y-2">
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center text-cream/30 text-sm font-body">
+              Nenhum pedido com este status.
+            </div>
+          ) : (
+            filtered.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
+                onClick={() => openDetail(p)}
+                className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gold-primary/12 bg-white/3 hover:bg-white/5 active:bg-white/7 cursor-pointer transition-colors duration-200"
+              >
+                {/* Status dot + ID */}
+                <div className="shrink-0">
+                  <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[p.status]} mb-1`} />
+                  <p className="text-cream/30 text-xs font-body tabular-nums">#{p.id}</p>
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <StatusBadge status={p.status} />
+                  </div>
+                  <p className="text-cream/50 text-xs font-body">
+                    {formatDate(p.criadoEm)} · {p.itens.length} item{p.itens.length !== 1 ? 'ns' : ''}
+                  </p>
+                </div>
+
+                {/* Total + arrow */}
+                <div className="shrink-0 text-right">
+                  <p className="text-gold-light font-bold tabular-nums">{formatCurrency(p.total)}</p>
+                  <CaretRightIcon size={14} className="text-cream/25 ml-auto mt-1" />
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ── Desktop: Table ────────────────────────────────────────── */}
+      {!loading && !error && pedidos.length > 0 && (
+        <div className="hidden md:block overflow-x-auto rounded-2xl border border-gold-primary/15">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gold-primary/15">
+              <tr className="border-b border-gold-primary/15 bg-white/2">
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">#</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Status</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Total</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Data</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Itens</th>
+                <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Forma Pgto</th>
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-cream/30 text-sm font-body">
+                    <td colSpan={6} className="px-5 py-12 text-center text-cream/30 text-sm font-body">
                       Nenhum pedido com o status selecionado.
                     </td>
                   </tr>
@@ -212,18 +299,18 @@ export default function OrdersTab() {
                   filtered.map((p, i) => (
                     <motion.tr
                       key={p.id}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      transition={{ delay: i * 0.02, duration: 0.25, ease: EASE }}
+                      transition={{ delay: i * 0.02, duration: 0.22, ease: EASE }}
                       onClick={() => openDetail(p)}
                       className="border-b border-gold-primary/8 last:border-0 hover:bg-white/3 transition-colors duration-200 cursor-pointer"
                     >
-                      <td className="px-5 py-3.5 text-cream/50 font-body tabular-nums">#{p.id}</td>
+                      <td className="px-5 py-3.5 text-cream/40 font-body tabular-nums text-xs">#{p.id}</td>
                       <td className="px-5 py-3.5">
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="px-5 py-3.5 text-cream/90 font-body tabular-nums">
+                      <td className="px-5 py-3.5 text-cream/90 font-body tabular-nums font-medium">
                         {formatCurrency(p.total)}
                       </td>
                       <td className="px-5 py-3.5 text-cream/50 font-body">
@@ -231,6 +318,9 @@ export default function OrdersTab() {
                       </td>
                       <td className="px-5 py-3.5 text-cream/50 font-body">
                         {p.itens.length} item{p.itens.length !== 1 ? 'ns' : ''}
+                      </td>
+                      <td className="px-5 py-3.5 text-cream/40 font-body text-xs">
+                        {p.formaPagamento || <span className="text-cream/20">—</span>}
                       </td>
                     </motion.tr>
                   ))
@@ -247,7 +337,7 @@ export default function OrdersTab() {
         </p>
       )}
 
-      {/* Order detail modal */}
+      {/* ── Order detail modal ────────────────────────────────────── */}
       <AnimatePresence>
         {selectedPedido && (
           <>
@@ -266,19 +356,19 @@ export default function OrdersTab() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 24 }}
               transition={{ duration: 0.28, ease: EASE }}
-              className="fixed inset-0 z-[71] flex items-center justify-center px-4 py-8 pointer-events-none"
+              className="fixed inset-0 z-[71] flex items-end md:items-center justify-center px-4 py-4 md:py-8 pointer-events-none"
             >
               <div
-                className="relative w-full max-w-2xl bg-dark-warm border border-gold-primary/25 rounded-3xl shadow-gold pointer-events-auto max-h-[85vh] flex flex-col"
+                className="relative w-full max-w-2xl bg-dark-warm border border-gold-primary/25 rounded-3xl shadow-gold pointer-events-auto max-h-[90vh] md:max-h-[85vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal header */}
-                <div className="flex items-start justify-between px-7 pt-7 pb-5 shrink-0 border-b border-gold-primary/10">
+                <div className="flex items-start justify-between px-6 pt-6 pb-4 shrink-0 border-b border-gold-primary/10">
                   <div>
                     <p className="type-overline text-gold-primary/50 text-[10px] tracking-widest mb-1">
                       Detalhes do pedido
                     </p>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <h2 className="font-display font-bold text-2xl text-cream">
                         Pedido #{selectedPedido.id}
                       </h2>
@@ -297,7 +387,8 @@ export default function OrdersTab() {
                 </div>
 
                 {/* Scrollable body */}
-                <div className="overflow-y-auto flex-1 px-7 py-5 space-y-6">
+                <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+
                   {/* Items */}
                   <div>
                     <p className="type-overline text-[9px] text-gold-primary/50 tracking-widest mb-3">
@@ -306,11 +397,11 @@ export default function OrdersTab() {
                     <div className="rounded-xl border border-gold-primary/10 overflow-hidden">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-gold-primary/10">
+                          <tr className="border-b border-gold-primary/10 bg-white/2">
                             <th className="text-left px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Produto</th>
                             <th className="text-right px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Qtd</th>
-                            <th className="text-right px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Unitário</th>
-                            <th className="text-right px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Desconto</th>
+                            <th className="text-right px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Unit.</th>
+                            <th className="text-right px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Desc.</th>
                             <th className="text-right px-4 py-2.5 type-overline text-[9px] text-cream/30 tracking-widest font-normal">Subtotal</th>
                           </tr>
                         </thead>
@@ -321,9 +412,9 @@ export default function OrdersTab() {
                               <td className="px-4 py-2.5 text-cream/50 font-body tabular-nums text-right">{item.quantidade}</td>
                               <td className="px-4 py-2.5 text-cream/50 font-body tabular-nums text-right">{formatCurrency(item.precoUnitario)}</td>
                               <td className="px-4 py-2.5 text-red-300/70 font-body tabular-nums text-right">
-                                {item.descontoAplicado > 0 ? `- ${formatCurrency(item.descontoAplicado)}` : '—'}
+                                {item.descontoAplicado > 0 ? `−${formatCurrency(item.descontoAplicado)}` : '—'}
                               </td>
-                              <td className="px-4 py-2.5 text-cream/90 font-body tabular-nums text-right">{formatCurrency(item.subtotal)}</td>
+                              <td className="px-4 py-2.5 text-cream/90 font-body tabular-nums text-right font-medium">{formatCurrency(item.subtotal)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -331,7 +422,7 @@ export default function OrdersTab() {
                     </div>
 
                     {/* Totals */}
-                    <div className="mt-3 space-y-1.5">
+                    <div className="mt-3 space-y-1.5 px-1">
                       <div className="flex justify-between text-sm text-cream/50 font-body">
                         <span>Subtotal</span>
                         <span className="tabular-nums">{formatCurrency(selectedPedido.subtotal)}</span>
@@ -339,14 +430,16 @@ export default function OrdersTab() {
                       {selectedPedido.descontoTotal > 0 && (
                         <div className="flex justify-between text-sm text-red-300/70 font-body">
                           <span>Desconto</span>
-                          <span className="tabular-nums">− {formatCurrency(selectedPedido.descontoTotal)}</span>
+                          <span className="tabular-nums">−{formatCurrency(selectedPedido.descontoTotal)}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm text-cream/50 font-body">
                         <span>Frete</span>
-                        <span className="tabular-nums">{selectedPedido.valorFrete === 0 ? 'Grátis' : formatCurrency(selectedPedido.valorFrete)}</span>
+                        <span className="tabular-nums">
+                          {selectedPedido.valorFrete === 0 ? 'Grátis' : formatCurrency(selectedPedido.valorFrete)}
+                        </span>
                       </div>
-                      <div className="flex justify-between text-base text-gold-light font-body font-bold pt-1 border-t border-gold-primary/15">
+                      <div className="flex justify-between text-base text-gold-light font-body font-bold pt-2 border-t border-gold-primary/15">
                         <span>Total</span>
                         <span className="tabular-nums">{formatCurrency(selectedPedido.total)}</span>
                       </div>
@@ -405,20 +498,26 @@ export default function OrdersTab() {
                       <p className="type-overline text-[9px] text-gold-primary/50 tracking-widest mb-3">
                         Atualizar status
                       </p>
-                      <div className="space-y-3">
-                        <select
-                          value={novoStatus}
-                          onChange={(e) => setNovoStatus(e.target.value as PedidoStatus | '')}
-                          className="w-full bg-white/5 border border-gold-primary/15 hover:border-gold-primary/30 focus:border-gold-primary/60 rounded-xl px-4 py-2.5 text-cream text-sm outline-none transition-[border-color] duration-300 appearance-none cursor-pointer"
-                        >
-                          <option value="" className="bg-dark-warm text-cream/50">Selecionar novo status...</option>
-                          {proximosStatus.map((s) => (
-                            <option key={s} value={s} className="bg-dark-warm text-cream">
-                              {STATUS_LABEL[s]}
-                            </option>
-                          ))}
-                        </select>
 
+                      {/* Quick action buttons */}
+                      <div className="flex gap-2 flex-wrap mb-4">
+                        {proximosStatus.map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setNovoStatus(novoStatus === s ? '' : s)}
+                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full type-overline text-[9px] tracking-widest transition-all duration-200 ${
+                              novoStatus === s
+                                ? `${STATUS_COLOR[s]} border border-current/30 font-bold`
+                                : 'border border-gold-primary/20 text-cream/50 hover:border-gold-primary/40 hover:text-cream/80'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[s]}`} />
+                            {STATUS_LABEL[s]}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="space-y-3">
                         <textarea
                           placeholder="Observação (opcional)..."
                           value={observacao}
@@ -455,8 +554,10 @@ export default function OrdersTab() {
                               <span className="w-3.5 h-3.5 border-2 border-dark-warm/30 border-t-dark-warm rounded-full animate-spin" />
                               Atualizando...
                             </>
+                          ) : novoStatus ? (
+                            `Confirmar → ${STATUS_LABEL[novoStatus]}`
                           ) : (
-                            'Confirmar alteração'
+                            'Selecione um novo status acima'
                           )}
                         </motion.button>
                       </div>
@@ -464,7 +565,7 @@ export default function OrdersTab() {
                   )}
 
                   {isTerminal && (
-                    <div className="border-t border-gold-primary/10 pt-5">
+                    <div className="border-t border-gold-primary/10 pt-4">
                       <p className="text-cream/25 text-xs font-body italic text-center">
                         Este pedido está em um status final e não pode ser alterado.
                       </p>
