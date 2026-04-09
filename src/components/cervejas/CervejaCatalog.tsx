@@ -245,7 +245,7 @@ export default function CervejaCatalog() {
     return () => document.removeEventListener('mousedown', handler);
   }, [openPopover]);
 
-  const togglePopover = (id: PopoverId, triggerRef?: React.RefObject<HTMLDivElement>) => {
+  const togglePopover = (id: PopoverId, triggerRef?: React.RefObject<HTMLDivElement | null>) => {
     setOpenPopover((cur) => {
       if (cur === id) {
         setPopoverPos(null);
