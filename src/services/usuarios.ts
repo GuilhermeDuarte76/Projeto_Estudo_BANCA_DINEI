@@ -85,3 +85,28 @@ export const setEnderecoPrincipal = (userId: number, id: number) =>
 
 export const deleteEndereco = (userId: number, id: number) =>
   apiFetch<null>(`/api/usuarios/${userId}/enderecos/${id}`, { method: 'DELETE' })
+
+// ── Admin - Usuários ──────────────────────────────────────────────────────────
+
+export interface UserListItem {
+  id: number
+  nome: string | null
+  role: string | null
+  lastLoginAt: string | null
+  isActive: boolean
+}
+
+export interface UsuarioPagedResult {
+  items: UserListItem[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export const getAdminUsuarios = (page = 1, pageSize = 20) => {
+  const q = new URLSearchParams()
+  q.set('page', String(page))
+  q.set('pageSize', String(pageSize))
+  return apiFetch<UsuarioPagedResult>(`/api/admin/usuarios?${q}`)
+}

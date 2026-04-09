@@ -13,7 +13,7 @@ export type PedidoStatus =
 export interface PedidoItem {
   id: number
   produtoId: number
-  nomeProduto: string
+  produtoNome: string
   quantidade: number
   precoUnitario: number
   descontoAplicado: number
@@ -43,7 +43,7 @@ export interface Pedido {
   criadoEm: string
   atualizadoEm: string
   itens: PedidoItem[]
-  historicoStatus: PedidoStatusHistorico[]
+  statusHistorico: PedidoStatusHistorico[]
 }
 
 export interface PedidoItemInput {

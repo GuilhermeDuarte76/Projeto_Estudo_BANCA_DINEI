@@ -106,7 +106,7 @@ function PedidoCard({ pedido, index }: { pedido: Pedido; index: number }) {
                   <div key={item.id} className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="type-overline text-[9px] text-cream/30 w-5 text-right shrink-0">{item.quantidade}×</span>
-                      <p className="text-cream/70 text-sm font-body truncate">{item.nomeProduto}</p>
+                      <p className="text-cream/70 text-sm font-body truncate">{item.produtoNome}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {item.descontoAplicado > 0 && (

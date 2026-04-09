@@ -94,7 +94,7 @@ export default function OrdersTab() {
     setError('')
     const res = await getPedidos()
     if (res.success) {
-      setPedidos(Array.isArray(res.data) ? res.data : [])
+      setPedidos(res.data?.items ?? [])
     } else {
       setError(res.message || 'Erro ao carregar pedidos.')
     }
@@ -408,7 +408,7 @@ export default function OrdersTab() {
                         <tbody>
                           {selectedPedido.itens.map((item) => (
                             <tr key={item.id} className="border-b border-gold-primary/8 last:border-0">
-                              <td className="px-4 py-2.5 text-cream/80 font-body">{item.nomeProduto}</td>
+                              <td className="px-4 py-2.5 text-cream/80 font-body">{item.produtoNome}</td>
                               <td className="px-4 py-2.5 text-cream/50 font-body tabular-nums text-right">{item.quantidade}</td>
                               <td className="px-4 py-2.5 text-cream/50 font-body tabular-nums text-right">{formatCurrency(item.precoUnitario)}</td>
                               <td className="px-4 py-2.5 text-red-300/70 font-body tabular-nums text-right">
@@ -453,17 +453,17 @@ export default function OrdersTab() {
                   </div>
 
                   {/* Status history */}
-                  {selectedPedido.historicoStatus.length > 0 && (
+                  {selectedPedido.statusHistorico.length > 0 && (
                     <div>
                       <p className="type-overline text-[9px] text-gold-primary/50 tracking-widest mb-3">
                         Histórico de status
                       </p>
                       <div className="space-y-3">
-                        {selectedPedido.historicoStatus.map((h, i) => (
+                        {selectedPedido.statusHistorico.map((h, i) => (
                           <div key={i} className="flex gap-3">
                             <div className="flex flex-col items-center">
                               <div className="w-2 h-2 rounded-full bg-gold-primary/50 shrink-0 mt-1" />
-                              {i < selectedPedido.historicoStatus.length - 1 && (
+                              {i < selectedPedido.statusHistorico.length - 1 && (
                                 <div className="w-px flex-1 bg-gold-primary/10 mt-1" />
                               )}
                             </div>

@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MagnifyingGlassIcon, WarningCircleIcon, XIcon, PlusIcon,
   PencilSimpleIcon, TrashIcon, StarIcon, PhoneIcon, MapPinIcon,
+  ArrowsClockwiseIcon,
 } from '@phosphor-icons/react'
 import {
   type UserContato, type UserContatoInput,
   type UserEndereco, type UserEnderecoInput,
-  type TipoContato,
+  type TipoContato, type UserListItem,
   getContatos, createContato, updateContato, setContatoPrincipal, deleteContato,
   getEnderecos, createEndereco, updateEndereco, setEnderecoPrincipal, deleteEndereco,
+  getAdminUsuarios,
 } from '../../services/usuarios'
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
@@ -274,6 +276,26 @@ function EnderecoForm({ open, initial, loading = false, onSave, onClose }: Ender
 type ActiveSection = 'contatos' | 'enderecos'
 
 export default function UsersTab() {
+  // ── Lista de usuários (auto-fetch) ────────────────────────────────────────
+  const [usuarios, setUsuarios] = useState<UserListItem[]>([])
+  const [usuariosLoading, setUsuariosLoading] = useState(true)
+  const [usuariosError, setUsuariosError] = useState('')
+
+  const fetchUsuarios = useCallback(async () => {
+    setUsuariosLoading(true)
+    setUsuariosError('')
+    const res = await getAdminUsuarios()
+    if (res.success) {
+      setUsuarios(res.data?.items ?? [])
+    } else {
+      setUsuariosError(res.message || 'Erro ao carregar usuários.')
+    }
+    setUsuariosLoading(false)
+  }, [])
+
+  useEffect(() => { fetchUsuarios() }, [fetchUsuarios])
+
+  // ── Detalhes do usuário selecionado ───────────────────────────────────────
   const [userIdInput, setUserIdInput] = useState('')
   const [userId, setUserId] = useState<number | null>(null)
   const [activeSection, setActiveSection] = useState<ActiveSection>('contatos')
@@ -396,6 +418,87 @@ export default function UsersTab() {
 
   return (
     <div className="space-y-6">
+
+      {/* ── Lista de usuários ──────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="type-overline text-[9px] text-gold-primary/50 tracking-widest uppercase">Todos os usuários</span>
+            {!usuariosLoading && (
+              <span className="px-1.5 py-0.5 rounded-full bg-white/5 text-cream/40 type-overline text-[8px]">
+                {usuarios.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={fetchUsuarios}
+            disabled={usuariosLoading}
+            title="Recarregar usuários"
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/40 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200 disabled:opacity-40"
+          >
+            <ArrowsClockwiseIcon size={13} className={usuariosLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+
+        {usuariosError && (
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs font-body">
+            <WarningCircleIcon size={14} weight="fill" className="shrink-0" />{usuariosError}
+          </div>
+        )}
+
+        {usuariosLoading && (
+          <div className="space-y-1.5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 rounded-xl bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        {!usuariosLoading && usuarios.length === 0 && !usuariosError && (
+          <p className="text-cream/25 text-xs font-body italic text-center py-4">Nenhum usuário encontrado.</p>
+        )}
+
+        {!usuariosLoading && usuarios.length > 0 && (
+          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
+            {usuarios.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => { setUserIdInput(String(u.id)); loadUserData(u.id) }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left transition-all duration-200 ${
+                  userId === u.id
+                    ? 'bg-gold-primary/10 border-gold-primary/30'
+                    : 'bg-white/3 border-white/5 hover:border-gold-primary/20 hover:bg-white/5'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 text-xs font-display font-bold ${
+                  u.isActive
+                    ? 'bg-gold-primary/15 border-gold-primary/30 text-gold-light'
+                    : 'bg-white/5 border-white/10 text-cream/30'
+                }`}>
+                  {u.id}
+                </div>
+                <p className={`flex-1 min-w-0 text-sm font-body truncate ${u.isActive ? 'text-cream/80' : 'text-cream/30 line-through'}`}>
+                  {u.nome ?? '—'}
+                </p>
+                {u.lastLoginAt && (
+                  <span className="text-cream/30 text-[10px] font-body shrink-0 hidden sm:block">
+                    {new Date(u.lastLoginAt).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+                <span className={`px-1.5 py-0.5 rounded-full type-overline text-[8px] tracking-widest shrink-0 ${
+                  u.role === 'Admin'
+                    ? 'bg-gold-primary/15 text-gold-light'
+                    : 'bg-white/5 text-cream/40'
+                }`}>
+                  {u.role ?? '—'}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Gerenciar contatos e endereços por ID ─────────────────────────── */}
       {/* Search bar */}
       <form onSubmit={handleSearch} className="flex gap-3">
         <div className="relative flex-1 max-w-xs">

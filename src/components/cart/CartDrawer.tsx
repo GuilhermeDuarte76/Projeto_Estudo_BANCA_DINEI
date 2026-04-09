@@ -81,6 +81,18 @@ export default function CartDrawer() {
     setOrderLoading(true);
     setOrderError('');
 
+    // Build message and open WhatsApp before the async call to preserve the
+    // user-gesture context and avoid popup blockers.
+    const msg = buildWhatsAppMessage(
+      items,
+      totalPrice,
+      selectedPayment ?? undefined,
+      selectedDelivery,
+      selectedAddress ?? undefined,
+    );
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    const waWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
+
     const res = await createPedido({
       enderecoEntregaId: selectedDelivery === 'entrega' ? (selectedAddress?.id ?? null) : null,
       formaPagamento: selectedPayment ?? undefined,
@@ -94,17 +106,10 @@ export default function CartDrawer() {
     if (!res.success) {
       setOrderLoading(false);
       setOrderError('Não foi possível registrar o pedido. Verifique sua conexão e tente novamente.');
+      // Fallback: if popup was blocked, try navigating directly
+      if (!waWindow) window.location.href = waUrl;
       return;
     }
-
-    const msg = buildWhatsAppMessage(
-      items,
-      totalPrice,
-      selectedPayment ?? undefined,
-      selectedDelivery,
-      selectedAddress ?? undefined,
-    );
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
 
     clearCart();
     setOrderLoading(false);

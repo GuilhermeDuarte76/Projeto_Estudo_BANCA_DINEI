@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CervejariaLouvada from '../../components/louvada/CervejariaLouvada';
+import louvadaLogo from '../../assets/cervejaria-louvada.png';
+import CervejaCatalog from '../../components/cervejas/CervejaCatalog';
 
 const novaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/Video_Generation_Complete1-ezgif.com-reverse-video.mp4';
 
@@ -507,12 +509,45 @@ export default function CervejaPage() {
               <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 11, letterSpacing: '5px', textTransform: 'uppercase', color: `${GOLD}70` }}>
                 Cervejaria
               </div>
-              <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 'clamp(24px, 4vw, 42px)', fontWeight: 600, letterSpacing: '8px', textTransform: 'uppercase', color: '#FFFFFF', lineHeight: 1 }}>
-                {beer.brewery}
-              </div>
-              <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 'clamp(40px, 8vw, 90px)', fontWeight: 700, color: GOLD, lineHeight: 0.85, letterSpacing: '2px' }}>
-                {beer.name}
-              </div>
+              {beer.brewery === 'Louvada' ? (
+                <div style={{ position: 'relative', display: 'inline-block', marginTop: mobile ? '0px' : '-30px' }}>
+                  <img
+                    src={louvadaLogo}
+                    alt="Cervejaria Louvada"
+                    style={{ height: 'clamp(90px, 14vw, 160px)', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '10%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '80%',
+                    fontFamily: "'Teko', sans-serif",
+                    fontSize: beer.name.length <= 3
+                      ? 'clamp(22px, 4vw, 52px)'
+                      : beer.name.length <= 6
+                        ? 'clamp(16px, 2.8vw, 38px)'
+                        : 'clamp(12px, 2vw, 26px)',
+                    fontWeight: 700,
+                    color: GOLD,
+                    lineHeight: 1,
+                    letterSpacing: beer.name.length > 6 ? '1px' : '4px',
+                    textAlign: 'center',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {beer.name}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 'clamp(24px, 4vw, 42px)', fontWeight: 600, letterSpacing: '8px', textTransform: 'uppercase', color: '#FFFFFF', lineHeight: 1 }}>
+                    {beer.brewery}
+                  </div>
+                  <div style={{ fontFamily: "'Teko', sans-serif", fontSize: 'clamp(40px, 8vw, 90px)', fontWeight: 700, color: GOLD, lineHeight: 0.85, letterSpacing: '2px' }}>
+                    {beer.name}
+                  </div>
+                </>
+              )}
             </div>
             <video
               ref={videoRef}
@@ -957,6 +992,8 @@ export default function CervejaPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CervejaCatalog />
 
       {/* ── existing Louvada partnership content ─────────────── */}
       <CervejariaLouvada hideVideo />
