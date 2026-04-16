@@ -129,7 +129,7 @@ export default function MobileCart() {
       items,
       totalPrice,
       selectedPayment ?? undefined,
-      selectedDelivery,
+      selectedDelivery ?? undefined,
       selectedAddress ?? undefined,
     );
     const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
