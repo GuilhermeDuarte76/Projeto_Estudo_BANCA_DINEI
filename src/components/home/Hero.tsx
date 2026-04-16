@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CrownIcon, ArrowDownIcon, WhatsappLogoIcon, StarIcon, MapPinIcon } from '@phosphor-icons/react';
 import taboaFrios from '../../assets/taboaFrios.jpg';
-import logo from '../../assets/logo.png';
+import LogoReveal from './LogoReveal';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -65,29 +65,14 @@ export default function Hero() {
             </div>
           </motion.div>
 
-          {/* Logo — apenas mobile */}
+          {/* Logo Reveal — mobile */}
           <motion.div {...fadeUp(0.2)} className="flex lg:hidden justify-center">
-            <img
-              src={logo}
-              alt="Banca do Dinei"
-              className="h-52 w-auto object-contain drop-shadow-lg"
-            />
+            <LogoReveal className="w-56 h-56" />
           </motion.div>
 
-          {/* Main title — apenas desktop */}
-          <motion.div {...fadeUp(0.2)} className="hidden lg:flex flex-col gap-0">
-            <span className="font-display font-bold text-cream/50 text-xl lg:text-2xl tracking-[0.3em] uppercase">
-              Banca do
-            </span>
-            <h1
-              className="font-display font-black text-cream leading-none tracking-tight"
-              style={{ fontSize: 'clamp(3rem, 10vw, 8rem)' }}
-            >
-              DINEI
-            </h1>
-            <span className="font-subtitle italic text-gold-light text-lg lg:text-xl tracking-widest mt-1">
-              Delicatessen
-            </span>
+          {/* Logo Reveal — desktop */}
+          <motion.div {...fadeUp(0.1)} className="hidden lg:flex">
+            <LogoReveal className="w-80 h-80" />
           </motion.div>
 
           {/* Tagline */}
