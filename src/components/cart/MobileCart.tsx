@@ -29,6 +29,8 @@ export default function MobileCart() {
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const pendingDelivery = useRef(false);
+  const pendingOrder = useRef(false);
+  const [guestConfirmOpen, setGuestConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && pendingDelivery.current) {
@@ -44,6 +46,7 @@ export default function MobileCart() {
       setSelectedAddress(null);
       setOrderError('');
       setOrderSuccess(false);
+      setGuestConfirmOpen(false);
     }
   }, [isOpen]);
 
@@ -74,6 +77,13 @@ export default function MobileCart() {
 
   const handleSendOrder = async () => {
     if (!canSendOrder) return;
+
+    // If not authenticated, show dialog asking to continue as guest or login
+    if (!isAuthenticated) {
+      setGuestConfirmOpen(true);
+      return;
+    }
+
     setOrderLoading(true);
     setOrderError('');
 
@@ -111,6 +121,38 @@ export default function MobileCart() {
     setOrderLoading(false);
     setOrderSuccess(true);
   };
+
+  // Guest flow: open WhatsApp only, no backend POST
+  const handleSendOrderAsGuest = () => {
+    setGuestConfirmOpen(false);
+    const msg = buildWhatsAppMessage(
+      items,
+      totalPrice,
+      selectedPayment ?? undefined,
+      selectedDelivery,
+      selectedAddress ?? undefined,
+    );
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    const waWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
+    if (!waWindow) window.location.href = waUrl;
+    clearCart();
+  };
+
+  // Login flow: open auth modal, order is sent automatically after login
+  const handleLoginForOrder = () => {
+    setGuestConfirmOpen(false);
+    pendingOrder.current = true;
+    openAuthModal();
+  };
+
+  // After login, finalize the pending order
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isAuthenticated && pendingOrder.current) {
+      pendingOrder.current = false;
+      void handleSendOrder();
+    }
+  }, [isAuthenticated]);
 
   return (
     <>
@@ -417,6 +459,57 @@ export default function MobileCart() {
           onClose={() => setDeliveryModalOpen(false)}
         />
       )}
+
+      {/* Guest confirm modal */}
+      <AnimatePresence>
+        {guestConfirmOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-dark-warm/70"
+            onClick={() => setGuestConfirmOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-xs bg-dark-warm border border-gold-primary/30 rounded-2xl p-6 shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="font-display font-bold text-cream text-lg text-center mb-1">
+                Você não está logado
+              </h3>
+              <p className="text-cream/50 text-[11px] text-center mb-5 leading-relaxed">
+                Faça login para registrar seu pedido, ou continue sem login e envie apenas pelo WhatsApp.
+              </p>
+              <div className="space-y-2">
+                <button
+                  onClick={handleLoginForOrder}
+                  className="w-full bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300 active:scale-[0.97]"
+                >
+                  Fazer login
+                </button>
+                <button
+                  onClick={handleSendOrderAsGuest}
+                  className="w-full flex items-center justify-center gap-2 border border-gold-primary/30 text-cream/60 font-body text-xs px-6 py-3 rounded-full hover:border-gold-primary/60 hover:text-cream/80 transition-all duration-200"
+                >
+                  <WhatsappLogoIcon size={14} weight="fill" />
+                  Continuar sem login
+                </button>
+                <button
+                  onClick={() => setGuestConfirmOpen(false)}
+                  className="w-full text-cream/30 font-body text-[11px] py-2 hover:text-cream/50 transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

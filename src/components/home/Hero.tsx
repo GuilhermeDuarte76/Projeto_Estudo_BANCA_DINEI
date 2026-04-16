@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CrownIcon, ArrowDownIcon, WhatsappLogoIcon, StarIcon, MapPinIcon } from '@phosphor-icons/react';
 import taboaFrios from '../../assets/taboaFrios.jpg';
 import LogoReveal from './LogoReveal';
+import LocationModal from './LocationModal';
 
 const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
@@ -28,6 +30,7 @@ const fadeUp = (delay = 0) => ({
 
 export default function Hero() {
   const navigate = useNavigate();
+  const [locationOpen, setLocationOpen] = useState(false);
 
   return (
     <section
@@ -71,7 +74,7 @@ export default function Hero() {
           </motion.div>
 
           {/* Logo Reveal — desktop */}
-          <motion.div {...fadeUp(0.1)} className="hidden lg:flex">
+          <motion.div {...fadeUp(0.1)} className="hidden lg:flex lg:justify-center">
             <LogoReveal className="w-80 h-80" />
           </motion.div>
 
@@ -109,7 +112,7 @@ export default function Hero() {
             </div>
 
             <button
-              onClick={() => document.querySelector('#contato')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => setLocationOpen(true)}
               className="w-full lg:w-auto flex items-center justify-center gap-2 border border-cream/20 text-cream/50 font-body font-bold uppercase tracking-widest px-4 lg:px-8 py-3 rounded-full transition-all duration-300 hover:border-gold-primary/40 hover:text-gold-light text-xs lg:text-sm"
             >
               <MapPinIcon size={13} weight="fill" />
@@ -209,6 +212,9 @@ export default function Hero() {
           Role para descobrir
         </span>
       </motion.div>
+
+      {/* Location Modal */}
+      <LocationModal open={locationOpen} onClose={() => setLocationOpen(false)} />
     </section>
   );
 }
