@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XIcon, UserIcon, EnvelopeIcon, LockSimpleIcon, EyeIcon, EyeClosedIcon, WarningCircleIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useAuth, useAuthModal } from '../../context/AuthContext'
@@ -249,6 +250,16 @@ export default function AuthModal() {
                           autoComplete="current-password"
                           rightElement={passwordToggle}
                         />
+                      </div>
+
+                      <div className="flex justify-end mt-2">
+                        <Link
+                          to="/reset-password"
+                          onClick={closeAuthModal}
+                          className="type-overline text-[9px] text-cream/30 hover:text-gold-primary/70 tracking-widest transition-colors duration-200"
+                        >
+                          Esqueci minha senha
+                        </Link>
                       </div>
 
                       <Feedback error={error} success={success} />

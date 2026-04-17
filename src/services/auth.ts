@@ -33,3 +33,17 @@ export async function logoutUser() {
   clearTokens()
   return res
 }
+
+export async function forgotPassword(email: string) {
+  return apiFetch<null>('/api/Auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function resetPassword(token: string, novaSenha: string) {
+  return apiFetch<null>('/api/Auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, novaSenha }),
+  })
+}

@@ -20,6 +20,7 @@ import CachacaPage from './pages/bebidas/CachacaPage'
 import NaoAlcoolicosPage from './pages/bebidas/NaoAlcoolicosPage'
 import PerfilPage from './pages/PerfilPage'
 import PedidosPage from './pages/PedidosPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
               <Route path="/bebidas/nao-alcoolicos" element={<NaoAlcoolicosPage />} />
               <Route path="/perfil" element={<PerfilPage />} />
               <Route path="/pedidos" element={<PedidosPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Routes>
           </main>
           <Footer />
