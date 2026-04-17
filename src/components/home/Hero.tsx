@@ -39,7 +39,7 @@ export default function Hero() {
     >
       {/* Grain overlay */}
       <div
-        className="fixed inset-0 z-[1] pointer-events-none opacity-[0.04]"
+        className="absolute inset-0 z-[1] pointer-events-none opacity-[0.04]"
         style={{
           backgroundImage:
             'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
@@ -123,7 +123,7 @@ export default function Hero() {
           {/* Trust badges */}
           <motion.div
             {...fadeUp(0.6)}
-            className="flex flex-wrap items-center gap-4 lg:gap-6 pt-4 lg:pt-4 border-t border-cream/10"
+            className="flex flex-wrap items-center gap-5 lg:gap-8 pt-4 lg:pt-4 border-t border-cream/10"
           >
             {[
               { label: 'Qualidade', sub: 'Curada' },
@@ -131,10 +131,10 @@ export default function Hero() {
               { label: 'Pedido', sub: 'Via WhatsApp' },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2">
-                <StarIcon size={12} weight="fill" className="text-gold-primary" />
+                <StarIcon size={14} weight="fill" className="text-gold-primary" />
                 <div>
-                  <p className="type-overline text-cream text-[10px]">{item.label}</p>
-                  <p className="type-caption text-cream/40 text-[10px] not-italic">{item.sub}</p>
+                  <p className="type-overline text-cream text-xs">{item.label}</p>
+                  <p className="type-caption text-cream/40 text-[11px] not-italic">{item.sub}</p>
                 </div>
               </div>
             ))}

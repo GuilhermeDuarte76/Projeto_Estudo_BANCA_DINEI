@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { CartProvider } from './context/CartContext'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/layout/Navbar'
@@ -21,6 +22,7 @@ import NaoAlcoolicosPage from './pages/bebidas/NaoAlcoolicosPage'
 import PerfilPage from './pages/PerfilPage'
 import PedidosPage from './pages/PedidosPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+const ProdutoPage = lazy(() => import('./pages/ProdutoPage'))
 
 function App() {
   return (
@@ -30,6 +32,7 @@ function App() {
           <Navbar />
           <main>
             <Routes>
+              <Route path="/produtos/:id" element={<Suspense fallback={<div className="min-h-screen bg-dark-warm" />}><ProdutoPage /></Suspense>} />
               <Route path="/" element={<HomePage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/frios" element={<FriosPage />} />

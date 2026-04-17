@@ -464,6 +464,7 @@ export default function VinhosPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   /* debounce search input → busca */
@@ -481,7 +482,11 @@ export default function VinhosPage() {
 
   /* fetch wines whenever filters / page change */
   useEffect(() => {
-    setLoading(true)
+    if (page === 1) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
     setError(null)
 
     const params = new URLSearchParams({
@@ -497,7 +502,7 @@ export default function VinhosPage() {
     apiFetch<PagedResult<VinhoProduto>>(`/api/produtos?${params}`)
       .then((res) => {
         if (res.success) {
-          setProdutos(res.data.items)
+          setProdutos(prev => page === 1 ? res.data.items : [...prev, ...res.data.items])
           setTotalPages(res.data.totalPages)
           setTotalCount(res.data.totalCount)
         } else {
@@ -505,7 +510,10 @@ export default function VinhosPage() {
         }
       })
       .catch(() => setError('Erro de conexão com o servidor.'))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        setLoadingMore(false)
+      })
   }, [busca, marca, nacionalidadeId, tipo, page])
 
   const clearFilters = () => {
@@ -709,27 +717,35 @@ export default function VinhosPage() {
                 ))}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 mt-10">
-                  <button
-                    disabled={page === 1}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="px-4 py-2 rounded-full border border-gold-light/20 text-cream/40 font-body text-xs uppercase tracking-wider disabled:opacity-30 hover:border-gold-light/50 hover:text-gold-light transition-all duration-200"
+              {/* Loading more spinner */}
+              <AnimatePresence>
+                {loadingMore && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex justify-center pt-10"
                   >
-                    Anterior
-                  </button>
-                  <span className="type-overline text-cream/30 text-xs">
-                    {page} / {totalPages}
-                  </span>
+                    <div className="w-6 h-6 rounded-full border-2 border-gold-light/20 border-t-gold-light animate-spin" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Load more button */}
+              {!loadingMore && page < totalPages && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: EASE }}
+                  className="flex justify-center pt-10"
+                >
                   <button
-                    disabled={page === totalPages}
                     onClick={() => setPage((p) => p + 1)}
-                    className="px-4 py-2 rounded-full border border-gold-light/20 text-cream/40 font-body text-xs uppercase tracking-wider disabled:opacity-30 hover:border-gold-light/50 hover:text-gold-light transition-all duration-200"
+                    className="px-8 py-3 rounded-full border border-gold-light/25 text-cream/50 font-body font-bold text-xs uppercase tracking-widest hover:border-gold-light/50 hover:text-gold-light transition-all duration-300 hover:-translate-y-px"
                   >
-                    Próxima
+                    Carregar mais rótulos
                   </button>
-                </div>
+                </motion.div>
               )}
             </>
           )}

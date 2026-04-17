@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { CrownIcon, ShoppingCartIcon, CheckIcon, TagIcon } from '@phosphor-icons/react'
 import { useCart } from '../../context/CartContext'
@@ -67,6 +68,12 @@ export default function ProdutoCard({ produto, index }: Props) {
       transition={{ duration: 0.7, delay: index * 0.05, ease: EASE }}
       className="group relative h-full"
     >
+      <Link
+        to={`/produtos/${produto.id}`}
+        className="absolute inset-0 z-[1] rounded-2xl"
+        aria-label={`Ver detalhes de ${produto.nome}`}
+        tabIndex={-1}
+      />
       <div className="h-full p-1 bg-cream border border-gold-primary/30 rounded-2xl transition-all duration-500 group-hover:border-gold-primary/60 group-hover:shadow-gold-hover">
         <div
           className="h-full flex flex-col rounded-[calc(1rem-0.25rem)] overflow-hidden bg-cream"
@@ -132,20 +139,20 @@ export default function ProdutoCard({ produto, index }: Props) {
               <div className="flex items-end gap-1">
                 {hasDiscount && (
                   <p className="font-body text-graphite/40 text-xs line-through mb-0.5">
-                    R$ {produto.preco.toFixed(2)}
+                    R$ {produto.preco.toFixed(2).replace('.', ',')}
                   </p>
                 )}
               </div>
               <p className="font-display font-bold text-gold-primary text-2xl">
-                R$ {produto.precoComDesconto.toFixed(2)}
+                R$ {produto.precoComDesconto.toFixed(2).replace('.', ',')}
               </p>
               <p className="type-overline text-graphite/40 text-[10px]">{produto.unidadeMedida}</p>
             </div>
 
             {/* CTA */}
             <button
-              onClick={handleAdd}
-              className={`flex items-center justify-center gap-2 font-body font-bold uppercase tracking-wider text-xs px-5 py-3 rounded-full transition-all duration-300 active:scale-[0.98] ${
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAdd() }}
+              className={`relative z-[2] flex items-center justify-center gap-2 font-body font-bold uppercase tracking-wider text-xs px-5 py-3 rounded-full transition-all duration-300 active:scale-[0.98] ${
                 added
                   ? 'bg-gold-primary/15 border border-gold-primary/40 text-gold-primary'
                   : 'bg-gradient-gold text-dark-warm hover:-translate-y-px hover:shadow-gold'

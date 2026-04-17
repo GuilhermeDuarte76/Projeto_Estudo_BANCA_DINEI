@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import logoSrc from '../../assets/logo.png';
 
 interface Props {
@@ -8,8 +8,23 @@ interface Props {
 export default function LogoReveal({ className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showImg, setShowImg] = useState(false);
+  const rafRef = useRef<number>(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const finishAnimation = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    clearTimeout(timeoutRef.current);
+    sessionStorage.setItem('logoRevealed', '1');
+    setShowImg(true);
+  }, []);
 
   useEffect(() => {
+    // Returning visitors skip the animation entirely
+    if (sessionStorage.getItem('logoRevealed')) {
+      setShowImg(true);
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -50,7 +65,7 @@ export default function LogoReveal({ className }: Props) {
     const CROWN_CX  = CX;
     const CROWN_CY  = ARC_CY - 64 * S;
 
-    // ─── Centering: shift scene so badge is vertically centred on the canvas ───
+    // ─── Centering ───
     const BADGE_TOP_Y   = ARC_CY - ARC_R;
     const BADGE_BOT_Y   = RECT_BOT + NOTCH_H;
     const BADGE_CY_VIS  = (BADGE_TOP_Y + BADGE_BOT_Y) / 2;
@@ -63,15 +78,15 @@ export default function LogoReveal({ className }: Props) {
     realLogo.onload = () => { logoLoaded = true; };
 
     // ─── Easings ───
-    const easeOutCubic  = (t: number) => 1 - Math.pow(1 - t, 3);
-    const easeOutQuart  = (t: number) => 1 - Math.pow(1 - t, 4);
-    const easeOutQuint  = (t: number) => 1 - Math.pow(1 - t, 5);
+    const easeOutCubic   = (t: number) => 1 - Math.pow(1 - t, 3);
+    const easeOutQuart   = (t: number) => 1 - Math.pow(1 - t, 4);
+    const easeOutQuint   = (t: number) => 1 - Math.pow(1 - t, 5);
     const easeInOutCubic = (t: number) => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
-    const easeOutBack   = (t: number) => {
+    const easeOutBack    = (t: number) => {
       const c1 = 1.70158, c3 = c1 + 1;
       return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
     };
-    const easeInCubic   = (t: number) => t * t * t;
+    const easeInCubic  = (t: number) => t * t * t;
     const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 
     // ─── Badge outline path ───
@@ -375,9 +390,6 @@ export default function LogoReveal({ className }: Props) {
       ctx.restore();
     }
 
-    // Draws the logo image centred at the badge's visual centre.
-    // Must be called inside a ctx.translate(0, CENTER_OFFSET) context so
-    // the badge coordinates align with the already-centred drawing.
     function drawLogoImage() {
       if (!logoLoaded) return;
       const aspect = realLogo.width / realLogo.height;
@@ -390,7 +402,7 @@ export default function LogoReveal({ className }: Props) {
       ctx.drawImage(realLogo, CX - imgW / 2, BADGE_CY_VIS - imgH / 2, imgW, imgH);
     }
 
-    // ─── Particles ───
+    // ─── Particles — durations halved ───
     interface Particle { x: number; y: number; size: number; delay: number; dur: number; color: string; }
     const particles: Particle[] = Array.from({ length: 30 }, () => {
       const ang = Math.random() * Math.PI * 2;
@@ -399,8 +411,8 @@ export default function LogoReveal({ className }: Props) {
         x: CX + Math.cos(ang) * dist,
         y: ARC_CY + 30 * S + Math.sin(ang) * dist * 0.65,
         size:  (1.2 + Math.random() * 2.2) * S,
-        delay: 3.2 + Math.random() * 1.0,
-        dur:   0.35 + Math.random() * 0.35,
+        delay: 1.6 + Math.random() * 0.5,
+        dur:   0.175 + Math.random() * 0.175,
         color: Math.random() > 0.4 ? GOLD_LT : '#fff',
       };
     });
@@ -438,45 +450,39 @@ export default function LogoReveal({ className }: Props) {
       { char: 'I', x: CX + 155 * S },
     ];
 
-    // ─── Animation loop ───
+    // ─── Animation loop — all timings halved (7s → 3.5s) ───
     let startTime: number | null = null;
     let animDone = false;
-    let rafId: number;
 
     function render(ts: number) {
       if (!startTime) startTime = ts;
       const t = (ts - startTime) / 1000;
 
-      // Transparent frame — no background fill
       ctx.clearRect(0, 0, W, H);
 
-      // Timeline
-      const badgeA  = easeOutCubic(clamp01(t / 0.55));
-      const badgeS  = easeOutBack(clamp01(t / 0.6));
-      const arcP    = easeOutQuart(clamp01((t - 0.25) / 0.75));
-      const crownT  = clamp01((t - 0.55) / 0.6);
+      const badgeA  = easeOutCubic(clamp01(t / 0.275));
+      const badgeS  = easeOutBack(clamp01(t / 0.3));
+      const arcP    = easeOutQuart(clamp01((t - 0.125) / 0.375));
+      const crownT  = clamp01((t - 0.275) / 0.3);
       const crownA  = easeOutCubic(clamp01(crownT * 2.5));
       const crownD  = easeOutBack(crownT);
-      const bancaA  = easeOutCubic(clamp01((t - 0.95) / 0.4));
-      const ruleP   = easeInOutCubic(clamp01((t - 1.0) / 0.5));
+      const bancaA  = easeOutCubic(clamp01((t - 0.475) / 0.2));
+      const ruleP   = easeInOutCubic(clamp01((t - 0.5) / 0.25));
       const letters = letterDefs.map((ld, i) => {
-        const lt = clamp01((t - (1.15 + i * 0.12)) / 0.42);
+        const lt = clamp01((t - (0.575 + i * 0.06)) / 0.21);
         return { char: ld.char, x: ld.x, alpha: easeOutCubic(clamp01(lt * 2.2)), offsetY: (1 - easeOutBack(lt)) * 38 * S };
       });
-      const ribP       = easeOutQuint(clamp01((t - 1.85) / 0.6));
-      const ribTA      = easeOutCubic(clamp01((t - 2.3) / 0.3));
-      const decoA      = easeOutCubic(clamp01((t - 2.35) / 0.35));
-      const sheenP = clamp01((t - 2.7) / 0.7);
+      const ribP   = easeOutQuint(clamp01((t - 0.925) / 0.3));
+      const ribTA  = easeOutCubic(clamp01((t - 1.15) / 0.15));
+      const decoA  = easeOutCubic(clamp01((t - 1.175) / 0.175));
+      const sheenP = clamp01((t - 1.35) / 0.35);
 
-      // ── Phase 10: card flip (4.3 – 5.7) ──
-      // First half  (flipT 0→0.5): badge folds away  — scaleX 1→0 via easeInCubic
-      // Second half (flipT 0.5→1): logo unfolds in   — scaleX 0→1 via easeOutCubic
-      const flipT      = clamp01((t - 4.3) / 1.4);
-      const firstHalf  = flipT <= 0.5;
-      const halfP      = firstHalf ? flipT * 2 : (flipT - 0.5) * 2;
+      // ── Card flip (2.15 – 2.85s) ──
+      const flipT     = clamp01((t - 2.15) / 0.7);
+      const firstHalf = flipT <= 0.5;
+      const halfP     = firstHalf ? flipT * 2 : (flipT - 0.5) * 2;
       const flipScaleX = firstHalf ? 1 - easeInCubic(halfP) : easeOutCubic(halfP);
 
-      // Vertically centre the whole scene, then apply the horizontal flip squeeze
       ctx.save();
       ctx.translate(0, CENTER_OFFSET);
 
@@ -487,10 +493,8 @@ export default function LogoReveal({ className }: Props) {
       }
 
       if (!firstHalf && flipT > 0) {
-        // Logo side — unfolds into view
         drawLogoImage();
       } else {
-        // Badge side
         drawBadge(badgeA, badgeS);
         drawGoldArc(arcP);
         drawCrown(crownA, crownD);
@@ -504,37 +508,33 @@ export default function LogoReveal({ className }: Props) {
 
       ctx.restore();
 
-      if (t < 7) {
-        rafId = requestAnimationFrame(render);
+      if (t < 3.5) {
+        rafRef.current = requestAnimationFrame(render);
       } else if (!animDone) {
         animDone = true;
-        // Hand off to native <img> for maximum sharpness — canvas rendering
-        // has quality limits when upscaling; the browser img renderer does not.
+        sessionStorage.setItem('logoRevealed', '1');
         setShowImg(true);
       }
     }
 
-    let timeoutId: ReturnType<typeof setTimeout>;
-
     function start() {
-      rafId = requestAnimationFrame(render);
+      rafRef.current = requestAnimationFrame(render);
     }
 
     if (document.fonts?.ready) {
-      document.fonts.ready.then(() => { timeoutId = setTimeout(start, 150); });
+      document.fonts.ready.then(() => { timeoutRef.current = setTimeout(start, 150); });
     } else {
-      timeoutId = setTimeout(start, 600);
+      timeoutRef.current = setTimeout(start, 600);
     }
 
     return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafRef.current);
+      clearTimeout(timeoutRef.current);
     };
   }, []);
 
   return (
     <div className={`relative ${className ?? ''}`}>
-      {/* Canvas drives the animation; hidden once the img takes over */}
       <canvas
         ref={canvasRef}
         width={1200}
@@ -542,13 +542,21 @@ export default function LogoReveal({ className }: Props) {
         style={{ display: 'block', width: '100%', height: '100%' }}
         className={showImg ? 'invisible' : ''}
       />
-      {/* Native <img> renders with full browser quality after the flip */}
       <img
         src={logoSrc}
         alt="Banca do Dinei"
         draggable={false}
         className={`absolute inset-0 w-full h-full object-contain select-none transition-opacity duration-300 ${showImg ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       />
+      {!showImg && (
+        <button
+          onClick={finishAnimation}
+          className="absolute bottom-4 right-4 type-overline text-cream/30 hover:text-cream/60 transition-colors duration-200 text-[10px] bg-transparent border-none cursor-pointer"
+          aria-label="Pular animação"
+        >
+          Pular
+        </button>
+      )}
     </div>
   );
 }
