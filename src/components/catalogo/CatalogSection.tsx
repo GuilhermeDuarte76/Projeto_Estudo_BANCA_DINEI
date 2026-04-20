@@ -5,7 +5,6 @@ import {
   StarIcon,
   XIcon,
   CaretDownIcon,
-  CheckIcon,
 } from '@phosphor-icons/react'
 import { apiFetch } from '../../services/api'
 import SectionDivider from '../layout/SectionDivider'

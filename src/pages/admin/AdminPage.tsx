@@ -84,10 +84,10 @@ export default function AdminPage() {
         <div className="px-3 py-4 border-t border-gold-primary/10 shrink-0">
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/3">
             <div className="w-8 h-8 rounded-full bg-gold-primary/20 border border-gold-primary/30 flex items-center justify-center shrink-0">
-              <span className="text-gold-light font-bold text-xs">{user.name[0].toUpperCase()}</span>
+              <span className="text-gold-light font-bold text-xs">{user?.name[0].toUpperCase()}</span>
             </div>
             <div className="min-w-0">
-              <p className="text-cream/70 text-xs font-body truncate leading-tight">{user.name.split(' ')[0]}</p>
+              <p className="text-cream/70 text-xs font-body truncate leading-tight">{user?.name.split(' ')[0]}</p>
               <p className="text-gold-primary/50 text-[10px] type-overline tracking-widest">Administrador</p>
             </div>
           </div>
