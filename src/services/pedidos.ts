@@ -32,6 +32,8 @@ export interface PedidoStatusHistorico {
 export interface Pedido {
   id: number
   userId: number
+  usuarioNome?: string | null
+  usuarioEmail?: string | null
   enderecoEntregaId: number | null
   status: PedidoStatus
   formaPagamento: string | null

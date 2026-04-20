@@ -53,6 +53,7 @@ type VarianteRow = { label: string; descricao: string; precoCents: number }
 interface Props {
   open: boolean
   initial?: Product | null
+  duplicateSource?: Product
   loading?: boolean
   serverError?: string
   onSave: (data: ProductCreateInput) => void
@@ -99,7 +100,7 @@ function Skeleton({ className = '' }: { className?: string }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function ProductForm({ open, initial, loading = false, serverError, onSave, onClose }: Props) {
+export default function ProductForm({ open, initial, duplicateSource, loading = false, serverError, onSave, onClose }: Props) {
   // Form state
   const [form, setForm] = useState<ProductCreateInput>(EMPTY_FORM)
   const [precoCents, setPrecoCents] = useState(0)
@@ -129,6 +130,16 @@ export default function ProductForm({ open, initial, loading = false, serverErro
   const [marcaManual, setMarcaManual] = useState(false)
 
   const isEdit = !!initial
+  const isDuplicate = !initial && !!duplicateSource
+
+  // ── ESC to close ────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
 
   // ── Set field ───────────────────────────────────────────────────────────────
 
@@ -217,6 +228,34 @@ export default function ProductForm({ open, initial, loading = false, serverErro
         tipos: initial.tipos ?? null,
         isVisivel: initial.isVisivel,
       })
+    } else if (duplicateSource) {
+      const cents = Math.round((duplicateSource.preco ?? 0) * 100)
+      setPrecoCents(cents)
+      setSaboresChips(parseCSV(duplicateSource.sabores))
+      setTiposChips(parseCSV(duplicateSource.tipos))
+      setVariantesRows(
+        (duplicateSource.variantes ?? []).map((v) => ({
+          label: v.label,
+          descricao: v.descricao ?? '',
+          precoCents: Math.round(v.preco * 100),
+        }))
+      )
+      setForm({
+        nome: duplicateSource.nome ?? '',
+        descricao: duplicateSource.descricao ?? null,
+        preco: duplicateSource.preco ?? 0,
+        categoria: duplicateSource.categoria ?? '',
+        marca: duplicateSource.marca ?? '',
+        unidadeMedida: duplicateSource.unidadeMedida || 'UN',
+        codigoBarras: duplicateSource.codigoBarras ?? null,
+        pesoKg: duplicateSource.pesoKg ?? null,
+        imagemUrl: null,
+        destaque: duplicateSource.destaque ?? false,
+        nacionalidadeId: duplicateSource.nacionalidade?.id ?? null,
+        sabores: duplicateSource.sabores ?? null,
+        tipos: duplicateSource.tipos ?? null,
+        isVisivel: duplicateSource.isVisivel,
+      })
     } else {
       setPrecoCents(0)
       setSaboresChips([])
@@ -224,7 +263,7 @@ export default function ProductForm({ open, initial, loading = false, serverErro
       setVariantesRows([])
       setForm(EMPTY_FORM)
     }
-  }, [open, initial])
+  }, [open, initial, duplicateSource])
 
   // ── Check if categoria/marca exist in loaded options (edit mode) ────────────
 
@@ -386,25 +425,29 @@ export default function ProductForm({ open, initial, loading = false, serverErro
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <p className="type-overline text-gold-primary/50 text-[10px] tracking-widest">
-                        {isEdit ? 'Editar produto' : 'Novo produto'}
+                        {isEdit ? 'Editar produto' : isDuplicate ? 'Duplicar produto' : 'Novo produto'}
                       </p>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] tracking-widest type-overline ${
                         isEdit
                           ? 'bg-gold-primary/15 text-gold-light'
-                          : 'bg-emerald-500/15 text-emerald-400'
+                          : isDuplicate
+                            ? 'bg-blue-500/15 text-blue-300'
+                            : 'bg-emerald-500/15 text-emerald-400'
                       }`}>
                         {isEdit ? (
                           <><PencilSimpleIcon size={8} weight="fill" /> Editando</>
+                        ) : isDuplicate ? (
+                          <><PencilSimpleIcon size={8} weight="fill" /> Duplicando</>
                         ) : (
                           <><StarIcon size={8} weight="fill" /> Novo</>
                         )}
                       </span>
                     </div>
                     <h2 className="font-display font-bold text-xl md:text-2xl text-cream leading-tight">
-                      {isEdit ? initial!.nome : 'Novo produto'}
+                      {isEdit ? initial!.nome : isDuplicate ? `Duplicar — ${duplicateSource!.nome}` : 'Novo produto'}
                     </h2>
                     <p className="text-cream/30 text-xs font-body mt-0.5">
-                      Preencha as informações do produto
+                      {isDuplicate ? 'Imagem não copiada — adicione uma nova' : 'Preencha as informações do produto'}
                     </p>
                   </div>
                 </div>

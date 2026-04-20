@@ -124,7 +124,7 @@ export default function AdminPage() {
           {activeTab === 'orders'     && <OrdersTab />}
           {activeTab === 'promotions' && <PromotionsTab />}
           {activeTab === 'stores'     && <StoresTab />}
-          {activeTab === 'users'      && <UsersTab />}
+          {activeTab === 'users'      && <UsersTab onGoToOrders={() => setActiveTab('orders')} />}
         </motion.div>
       </main>
 

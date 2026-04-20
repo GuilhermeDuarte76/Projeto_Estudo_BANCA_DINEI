@@ -4,6 +4,14 @@ import { XIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { type Loja, type LojaCreateInput } from '../../services/lojas'
 import { EASE } from '../../lib/motion'
 
+const maskCNPJ = (v: string) =>
+  v.replace(/\D/g, '')
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2')
+    .slice(0, 18)
+
 
 const EMPTY: LojaCreateInput = {
   nome: '',
@@ -23,6 +31,13 @@ interface Props {
 export default function StoreForm({ open, initial, loading = false, onSave, onClose }: Props) {
   const [form, setForm] = useState<LojaCreateInput>(EMPTY)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
 
   useEffect(() => {
     if (open) {
@@ -50,7 +65,7 @@ export default function StoreForm({ open, initial, loading = false, onSave, onCl
     if (!form.cnpj.trim()) { setError('CNPJ é obrigatório.'); return }
     if (!form.telefone.trim()) { setError('Telefone é obrigatório.'); return }
     if (!form.email.trim()) { setError('E-mail é obrigatório.'); return }
-    onSave(form)
+    onSave({ ...form, cnpj: form.cnpj.replace(/\D/g, '') })
   }
 
   const isEdit = !!initial
@@ -113,7 +128,7 @@ export default function StoreForm({ open, initial, loading = false, onSave, onCl
                     type="text"
                     placeholder="00.000.000/0000-00"
                     value={form.cnpj}
-                    onChange={(e) => set('cnpj', e.target.value)}
+                    onChange={(e) => set('cnpj', maskCNPJ(e.target.value))}
                     className={inputClass}
                   />
                 </Field>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon,
   WarningCircleIcon, EyeIcon, EyeSlashIcon, StarIcon, ClockIcon, XIcon,
-  CheckCircleIcon, ArrowsClockwiseIcon, FunnelIcon, CaretDownIcon, CheckIcon,
+  ArrowsClockwiseIcon, FunnelIcon, CaretDownIcon, CheckIcon, CopyIcon,
 } from '@phosphor-icons/react'
 import {
   type Product,
@@ -21,6 +21,7 @@ import {
 } from '../../services/admin'
 import ProductForm from '../../components/admin/ProductForm'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
+import { AdminToast, useAdminToast } from '../../components/admin/AdminToast'
 import { EASE } from '../../lib/motion'
 
 
@@ -77,7 +78,6 @@ function FilterSelect({ placeholder, value, options, onChange }: FilterSelectPro
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[160px] max-h-64 overflow-y-auto rounded-2xl border border-gold-primary/20 bg-[#191309] shadow-[0_8px_32px_rgba(0,0,0,0.55)] py-1"
           >
-            {/* "Todos" option */}
             <button
               type="button"
               onClick={() => { onChange(''); setOpen(false) }}
@@ -141,6 +141,8 @@ export default function ProductsTab() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [marcaFilter, setMarcaFilter] = useState('')
+  const [destaqueFilter, setDestaqueFilter] = useState(false)
+  const [apenasOcultos, setApenasOcultos] = useState(false)
   const [catalogFilters, setCatalogFilters] = useState<CatalogFilters | null>(null)
 
   const [page, setPage] = useState(1)
@@ -150,17 +152,11 @@ export default function ProductsTab() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Product | null>(null)
+  const [duplicateSource, setDuplicateSource] = useState<Product | null>(null)
   const [formLoading, setFormLoading] = useState(false)
   const [formServerError, setFormServerError] = useState('')
 
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-    setToast({ type, message })
-    toastTimer.current = setTimeout(() => setToast(null), 4500)
-  }
+  const { toast, showToast } = useAdminToast()
 
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -169,6 +165,14 @@ export default function ProductsTab() {
   const [historyProduct, setHistoryProduct] = useState<Product | null>(null)
   const [history, setHistory] = useState<PriceHistoryEntry[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
+
+  // ESC for history modal
+  useEffect(() => {
+    if (!historyProduct) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setHistoryProduct(null) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [historyProduct])
 
   const fetchProducts = useCallback(async (params: GetProductsParams = {}) => {
     setLoading(true)
@@ -185,18 +189,19 @@ export default function ProductsTab() {
     setLoading(false)
   }, [])
 
-  // Ref para acessar estado atual dentro de callbacks sem stale closures
-  const stateRef = useRef({ categoryFilter, marcaFilter, search, page, pageSize })
-  stateRef.current = { categoryFilter, marcaFilter, search, page, pageSize }
+  const stateRef = useRef({ categoryFilter, marcaFilter, search, page, pageSize, destaqueFilter, apenasOcultos })
+  stateRef.current = { categoryFilter, marcaFilter, search, page, pageSize, destaqueFilter, apenasOcultos }
 
   const buildParams = (overrides: Partial<GetProductsParams> = {}): GetProductsParams => {
-    const { categoryFilter: cat, marcaFilter: marca, search: busca, page: pg, pageSize: ps } = stateRef.current
+    const { categoryFilter: cat, marcaFilter: marca, search: busca, page: pg, pageSize: ps, destaqueFilter: dest, apenasOcultos: ocultos } = stateRef.current
     return {
       categoria: cat || undefined,
       marca: marca || undefined,
       busca: busca || undefined,
       page: pg,
       pageSize: ps,
+      destaque: dest ? true : undefined,
+      isVisivel: ocultos ? false : undefined,
       ...overrides,
     }
   }
@@ -205,16 +210,13 @@ export default function ProductsTab() {
     fetchProducts(buildParams())
   }, [fetchProducts]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounce ref para busca por texto
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Re-fetch quando categoria ou marca mudam — reseta para página 1
   useEffect(() => {
     setPage(1)
     fetchProducts(buildParams({ page: 1 }))
-  }, [categoryFilter, marcaFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [categoryFilter, marcaFilter, destaqueFilter, apenasOcultos]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-fetch com debounce quando busca muda — reseta para página 1
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
@@ -224,13 +226,11 @@ export default function ProductsTab() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [search]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-fetch quando página muda + scroll ao topo
   useEffect(() => {
     fetchProducts(buildParams({ page }))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-fetch quando pageSize muda — reseta para página 1
   useEffect(() => {
     setPage(1)
     fetchProducts(buildParams({ page: 1, pageSize }))
@@ -253,6 +253,7 @@ export default function ProductsTab() {
     if (res.success) {
       setFormOpen(false)
       setEditTarget(null)
+      setDuplicateSource(null)
       refetch()
       showToast('success', res.message || 'Produto salvo com sucesso')
     } else {
@@ -270,10 +271,16 @@ export default function ProductsTab() {
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleteLoading(true)
-    await deleteProduct(deleteTarget.id)
+    const res = await deleteProduct(deleteTarget.id)
     setDeleteLoading(false)
+    const nome = deleteTarget.nome
     setDeleteTarget(null)
-    refetch()
+    if (res.success) {
+      showToast('success', `"${nome}" foi desativado.`)
+      refetch()
+    } else {
+      showToast('error', res.message || 'Não foi possível desativar o produto.')
+    }
   }
 
   const handleToggleVisibility = async (p: Product) => {
@@ -283,8 +290,9 @@ export default function ProductsTab() {
     refetch()
   }
 
-  const openCreate = () => { setEditTarget(null); setFormOpen(true) }
-  const openEdit = (p: Product) => { setEditTarget(p); setFormOpen(true) }
+  const openCreate = () => { setEditTarget(null); setDuplicateSource(null); setFormOpen(true) }
+  const openEdit = (p: Product) => { setEditTarget(p); setDuplicateSource(null); setFormOpen(true) }
+  const openDuplicate = (p: Product) => { setDuplicateSource(p); setEditTarget(null); setFormOpen(true) }
 
   const openHistory = async (p: Product) => {
     setHistoryProduct(p)
@@ -295,9 +303,8 @@ export default function ProductsTab() {
     setHistoryLoading(false)
   }
 
-  const hasActiveFilters = !!(search || categoryFilter || marcaFilter)
+  const hasActiveFilters = !!(search || categoryFilter || marcaFilter || destaqueFilter || apenasOcultos)
 
-  // Stats
   const totalVisible = products.filter((p) => p.isVisivel).length
   const totalHidden = products.filter((p) => !p.isVisivel).length
   const totalFeatured = products.filter((p) => p.destaque).length
@@ -308,10 +315,10 @@ export default function ProductsTab() {
       {/* ── Stats row ─────────────────────────────────────────────── */}
       {!loading && products.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total" value={products.length} />
-          <StatCard label="Visíveis" value={totalVisible} accent="text-emerald-400" />
-          <StatCard label="Ocultos" value={totalHidden} accent="text-cream/40" />
-          <StatCard label="Destaques" value={totalFeatured} accent="text-gold-light" />
+          <StatCard label="Total" value={totalCount} />
+          <StatCard label="Visíveis (pág.)" value={totalVisible} accent="text-emerald-400" />
+          <StatCard label="Ocultos (pág.)" value={totalHidden} accent="text-cream/40" />
+          <StatCard label="Destaques (pág.)" value={totalFeatured} accent="text-gold-light" />
         </div>
       )}
 
@@ -355,7 +362,6 @@ export default function ProductsTab() {
         <div className="flex flex-wrap items-center gap-2">
           <FunnelIcon size={12} className="text-gold-primary/40 shrink-0" weight={hasActiveFilters ? 'fill' : 'regular'} />
 
-          {/* Category filter */}
           <FilterSelect
             placeholder="Categoria"
             value={categoryFilter}
@@ -363,7 +369,6 @@ export default function ProductsTab() {
             onChange={setCategoryFilter}
           />
 
-          {/* Marca filter */}
           <FilterSelect
             placeholder="Marca"
             value={marcaFilter}
@@ -371,7 +376,30 @@ export default function ProductsTab() {
             onChange={setMarcaFilter}
           />
 
-          {/* Clear filters */}
+          <button
+            onClick={() => setDestaqueFilter((d) => !d)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-body transition-all duration-200 ${
+              destaqueFilter
+                ? 'border-gold-primary/45 text-gold-light bg-gold-primary/10'
+                : 'border-gold-primary/15 text-cream/50 bg-white/5 hover:border-gold-primary/30'
+            }`}
+          >
+            <StarIcon size={10} weight={destaqueFilter ? 'fill' : 'regular'} />
+            Destaques
+          </button>
+
+          <button
+            onClick={() => setApenasOcultos((o) => !o)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-body transition-all duration-200 ${
+              apenasOcultos
+                ? 'border-cream/30 text-cream/70 bg-white/8'
+                : 'border-gold-primary/15 text-cream/50 bg-white/5 hover:border-gold-primary/30'
+            }`}
+          >
+            <EyeSlashIcon size={10} />
+            Ocultos
+          </button>
+
           <AnimatePresence>
             {hasActiveFilters && (
               <motion.button
@@ -379,7 +407,7 @@ export default function ProductsTab() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 transition={{ duration: 0.15 }}
-                onClick={() => { setSearch(''); setCategoryFilter(''); setMarcaFilter('') }}
+                onClick={() => { setSearch(''); setCategoryFilter(''); setMarcaFilter(''); setDestaqueFilter(false); setApenasOcultos(false) }}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/40 text-xs font-body transition-all duration-200"
               >
                 <XIcon size={10} />
@@ -430,7 +458,6 @@ export default function ProductsTab() {
                 transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
                 className="rounded-2xl border border-gold-primary/12 bg-white/3 overflow-hidden"
               >
-                {/* Card body */}
                 <div className="flex gap-3 px-4 pt-4 pb-3">
                   {p.imagemUrl ? (
                     <img
@@ -470,7 +497,6 @@ export default function ProductsTab() {
                   </div>
                 </div>
 
-                {/* Card actions */}
                 <div className="flex items-center border-t border-gold-primary/8 px-4 py-2 gap-1">
                   <button
                     onClick={() => openHistory(p)}
@@ -478,6 +504,13 @@ export default function ProductsTab() {
                   >
                     <ClockIcon size={13} />
                     Histórico
+                  </button>
+                  <button
+                    onClick={() => openDuplicate(p)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-cream/45 hover:text-gold-light hover:bg-white/5 transition-all duration-200 text-xs font-body"
+                  >
+                    <CopyIcon size={13} />
+                    Duplicar
                   </button>
                   <button
                     onClick={() => handleToggleVisibility(p)}
@@ -525,7 +558,7 @@ export default function ProductsTab() {
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Preço</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Un.</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Visível</th>
-                <th className="px-5 py-3.5 w-36" />
+                <th className="px-5 py-3.5 w-44" />
               </tr>
             </thead>
             <tbody>
@@ -544,7 +577,7 @@ export default function ProductsTab() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
-                      className="border-b border-gold-primary/8 last:border-0 hover:bg-white/3 transition-colors duration-200 group"
+                      className="border-b border-gold-primary/8 last:border-0 hover:bg-white/3 transition-colors duration-200"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
@@ -589,7 +622,7 @@ export default function ProductsTab() {
                         }
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openHistory(p)}
                             title="Histórico de preço"
@@ -609,6 +642,13 @@ export default function ProductsTab() {
                                 ? <EyeSlashIcon size={13} />
                                 : <EyeIcon size={13} />
                             }
+                          </button>
+                          <button
+                            onClick={() => openDuplicate(p)}
+                            title="Duplicar produto"
+                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-200"
+                          >
+                            <CopyIcon size={13} />
                           </button>
                           <button
                             onClick={() => openEdit(p)}
@@ -639,7 +679,6 @@ export default function ProductsTab() {
       {!loading && totalCount > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
 
-          {/* Info + page size */}
           <div className="flex items-center gap-3">
             <p className="type-overline text-[9px] text-cream/30 tracking-widest whitespace-nowrap">
               {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, totalCount)} de {totalCount}
@@ -661,10 +700,8 @@ export default function ProductsTab() {
             </div>
           </div>
 
-          {/* Page navigation */}
           {totalPages > 1 && (
             <div className="flex items-center gap-1">
-              {/* Prev */}
               <button
                 onClick={() => setPage((p) => p - 1)}
                 disabled={page === 1}
@@ -673,7 +710,6 @@ export default function ProductsTab() {
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L4 6l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
 
-              {/* Page numbers */}
               {(() => {
                 const pages: (number | '…')[] = []
                 const delta = 1
@@ -707,7 +743,6 @@ export default function ProductsTab() {
                 )
               })()}
 
-              {/* Next */}
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page === totalPages}
@@ -724,10 +759,11 @@ export default function ProductsTab() {
       <ProductForm
         open={formOpen}
         initial={editTarget}
+        duplicateSource={duplicateSource ?? undefined}
         loading={formLoading}
         serverError={formServerError}
         onSave={handleSave}
-        onClose={() => { setFormOpen(false); setEditTarget(null); setFormServerError('') }}
+        onClose={() => { setFormOpen(false); setEditTarget(null); setDuplicateSource(null); setFormServerError('') }}
       />
 
       <ConfirmDialog
@@ -740,40 +776,7 @@ export default function ProductsTab() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* ── Toast ─────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            key="toast"
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            className={`fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-body max-w-sm w-full pointer-events-auto ${
-              toast.type === 'success'
-                ? 'bg-dark-warm border-emerald-500/30'
-                : 'bg-dark-warm border-red-500/30'
-            }`}
-            role="status"
-          >
-            <span className={`shrink-0 ${toast.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
-              {toast.type === 'success'
-                ? <CheckCircleIcon size={18} weight="fill" />
-                : <WarningCircleIcon size={18} weight="fill" />
-              }
-            </span>
-            <span className={toast.type === 'success' ? 'text-cream/90' : 'text-red-200'}>
-              {toast.message}
-            </span>
-            <button
-              onClick={() => setToast(null)}
-              className="ml-auto shrink-0 text-cream/30 hover:text-cream/70 transition-colors duration-200"
-            >
-              <XIcon size={14} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AdminToast toast={toast} onDismiss={() => {}} />
 
       {/* ── Price history modal ───────────────────────────────────── */}
       <AnimatePresence>

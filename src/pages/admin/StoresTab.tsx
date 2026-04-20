@@ -29,6 +29,7 @@ import {
 import StoreForm from '../../components/admin/StoreForm'
 import AddressForm from '../../components/admin/AddressForm'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
+import { AdminToast, useAdminToast } from '../../components/admin/AdminToast'
 import { EASE } from '../../lib/motion'
 
 
@@ -60,6 +61,8 @@ export default function StoresTab() {
   } | null>(null)
   const [deleteAddressLoading, setDeleteAddressLoading] = useState(false)
 
+  const { toast, showToast, clearToast } = useAdminToast()
+
   const fetchLojas = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -83,16 +86,25 @@ export default function StoresTab() {
     if (res.success) {
       setStoreFormOpen(false)
       setStoreEditTarget(null)
+      showToast('success', storeEditTarget ? 'Loja atualizada.' : 'Loja criada.')
       fetchLojas()
+    } else {
+      showToast('error', res.message || 'Não foi possível salvar a loja.')
     }
   }
 
   const handleDeactivate = async () => {
     if (!deactivateTarget) return
     setDeactivateLoading(true)
-    await desativarLoja(deactivateTarget.id)
+    const res = await desativarLoja(deactivateTarget.id)
     setDeactivateLoading(false)
+    const nome = deactivateTarget.nome
     setDeactivateTarget(null)
+    if (res.success) {
+      showToast('success', `"${nome}" foi desativada.`)
+    } else {
+      showToast('error', res.message || 'Não foi possível desativar a loja.')
+    }
     fetchLojas()
   }
 
@@ -112,21 +124,32 @@ export default function StoresTab() {
     if (res.success) {
       setAddressFormOpen(false)
       setAddressEditTarget(null)
+      showToast('success', addressEditTarget ? 'Endereço atualizado.' : 'Endereço adicionado.')
       fetchLojas()
+    } else {
+      showToast('error', res.message || 'Não foi possível salvar o endereço.')
     }
   }
 
   const handleSetPrincipal = async (lojaId: number, enderecoId: number) => {
-    await setEnderecoPrincipalLoja(lojaId, enderecoId)
+    const res = await setEnderecoPrincipalLoja(lojaId, enderecoId)
+    if (res.success) {
+      showToast('success', 'Endereço principal atualizado.')
+    }
     fetchLojas()
   }
 
   const handleDeleteAddress = async () => {
     if (!deleteAddressTarget) return
     setDeleteAddressLoading(true)
-    await deleteEnderecoLoja(deleteAddressTarget.lojaId, deleteAddressTarget.endereco.id)
+    const res = await deleteEnderecoLoja(deleteAddressTarget.lojaId, deleteAddressTarget.endereco.id)
     setDeleteAddressLoading(false)
     setDeleteAddressTarget(null)
+    if (res.success) {
+      showToast('success', 'Endereço removido.')
+    } else {
+      showToast('error', res.message || 'Não foi possível remover o endereço.')
+    }
     fetchLojas()
   }
 
@@ -388,6 +411,8 @@ export default function StoresTab() {
         onConfirm={handleDeleteAddress}
         onCancel={() => setDeleteAddressTarget(null)}
       />
+
+      <AdminToast toast={toast} onDismiss={clearToast} />
     </div>
   )
 }

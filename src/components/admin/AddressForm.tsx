@@ -29,6 +29,13 @@ export default function AddressForm({ open, initial, loading = false, onSave, on
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  useEffect(() => {
     if (open) {
       setForm(
         initial

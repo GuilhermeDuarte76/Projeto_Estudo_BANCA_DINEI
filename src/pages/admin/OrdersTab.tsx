@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   XIcon, WarningCircleIcon, ArrowRightIcon, ClipboardTextIcon, ArrowsClockwiseIcon,
-  CaretRightIcon,
+  CaretRightIcon, UserCircleIcon,
 } from '@phosphor-icons/react'
 import {
   type Pedido,
@@ -11,6 +11,7 @@ import {
   getPedidos,
   updatePedidoStatus,
 } from '../../services/pedidos'
+import { AdminToast, useAdminToast } from '../../components/admin/AdminToast'
 import { EASE } from '../../lib/motion'
 
 
@@ -77,11 +78,31 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('pt-BR')
 }
 
+function StatCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div className="bg-white/4 border border-gold-primary/10 rounded-2xl px-4 py-3">
+      <p className="type-overline text-[9px] text-cream/35 tracking-widest uppercase mb-1">{label}</p>
+      <p className={`font-display font-bold text-xl leading-tight ${accent ?? 'text-cream'}`}>{value}</p>
+    </div>
+  )
+}
+
+const PAGE_SIZE = 20
+
 export default function OrdersTab() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Todos')
+
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+
+  const lastCountRef = useRef(0)
+  const [hasNew, setHasNew] = useState(false)
+
+  const { toast, showToast, clearToast } = useAdminToast()
 
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null)
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false)
@@ -89,29 +110,70 @@ export default function OrdersTab() {
   const [novoStatus, setNovoStatus] = useState<PedidoStatus | ''>('')
   const [observacao, setObservacao] = useState('')
 
-  const fetchPedidos = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    const res = await getPedidos()
-    if (res.success) {
-      setPedidos(res.data?.items ?? [])
-    } else {
+  const stateRef = useRef({ statusFilter: 'Todos' as StatusFilter, page: 1 })
+  stateRef.current = { statusFilter, page }
+
+  const fetchPedidos = useCallback(async (background = false, overrides: { status?: StatusFilter; pg?: number } = {}) => {
+    const sf = overrides.status ?? stateRef.current.statusFilter
+    const pg = overrides.pg ?? stateRef.current.page
+    if (!background) {
+      setLoading(true)
+      setError('')
+    }
+    const res = await getPedidos(
+      sf !== 'Todos' ? sf as PedidoStatus : undefined,
+      pg,
+      PAGE_SIZE,
+    )
+    if (res.success && res.data) {
+      const newCount = res.data.totalCount
+      if (background && newCount > lastCountRef.current) {
+        setHasNew(true)
+      }
+      lastCountRef.current = newCount
+      setPedidos(res.data.items ?? [])
+      setTotalCount(newCount)
+      setTotalPages(res.data.totalPages)
+    } else if (!background) {
       setError(res.message || 'Erro ao carregar pedidos.')
     }
-    setLoading(false)
+    if (!background) setLoading(false)
   }, [])
 
+  // Initial load
   useEffect(() => { fetchPedidos() }, [fetchPedidos])
 
-  const filtered = pedidos.filter(
-    (p) => statusFilter === 'Todos' || p.status === statusFilter,
-  )
+  // Auto-refresh every 60s
+  useEffect(() => {
+    const interval = setInterval(() => fetchPedidos(true), 60_000)
+    return () => clearInterval(interval)
+  }, [fetchPedidos])
 
-  // Count per status for filter badges
-  const countByStatus = pedidos.reduce((acc, p) => {
-    acc[p.status] = (acc[p.status] || 0) + 1
-    return acc
-  }, {} as Partial<Record<PedidoStatus, number>>)
+  // ESC for detail modal
+  useEffect(() => {
+    if (!selectedPedido) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDetail() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [selectedPedido]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleStatusFilterChange = (f: StatusFilter) => {
+    setStatusFilter(f)
+    setPage(1)
+    setHasNew(false)
+    fetchPedidos(false, { status: f, pg: 1 })
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    fetchPedidos(false, { pg: newPage })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleRefresh = () => {
+    setHasNew(false)
+    fetchPedidos()
+  }
 
   const openDetail = (p: Pedido) => {
     setSelectedPedido(p)
@@ -141,29 +203,47 @@ export default function OrdersTab() {
       setSelectedPedido(res.data)
       setNovoStatus('')
       setObservacao('')
+      showToast('success', `Status atualizado para ${STATUS_LABEL[novoStatus]}.`)
       fetchPedidos()
     } else {
-      setStatusUpdateError(res.message || 'Erro ao atualizar status.')
+      const msg = res.message || 'Erro ao atualizar status.'
+      setStatusUpdateError(msg)
+      showToast('error', msg)
     }
   }
 
   const proximosStatus = selectedPedido ? NEXT_STATUS[selectedPedido.status] : []
   const isTerminal = proximosStatus.length === 0
 
+  // O5 — Stats from current page
+  const hoje = new Date().toLocaleDateString('pt-BR')
+  const pedidosHoje = pedidos.filter((p) => new Date(p.criadoEm).toLocaleDateString('pt-BR') === hoje)
+  const pedidosNaoCancelados = pedidos.filter((p) => p.status !== 'Cancelado')
+  const faturamentoTotal = pedidosNaoCancelados.reduce((acc, p) => acc + p.total, 0)
+  const pendentesCount = pedidos.filter((p) => p.status === 'Pendente').length
+  const ticketMedio = pedidosNaoCancelados.length > 0 ? faturamentoTotal / pedidosNaoCancelados.length : 0
+
   return (
     <div className="space-y-5">
 
-      {/* ── Status filter pills with counts ───────────────────────── */}
+      {/* ── O5: Stats block ───────────────────────────────────────── */}
+      {!loading && pedidos.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="Hoje" value={String(pedidosHoje.length)} accent="text-emerald-400" />
+          <StatCard label="Pendentes" value={String(pendentesCount)} accent="text-yellow-300" />
+          <StatCard label="Faturamento" value={formatCurrency(faturamentoTotal)} accent="text-gold-light" />
+          <StatCard label="Ticket médio" value={formatCurrency(ticketMedio)} />
+        </div>
+      )}
+
+      {/* ── Status filter pills ────────────────────────────────────── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {ALL_FILTERS.map((f) => {
           const isActive = statusFilter === f
-          const count = f === 'Todos'
-            ? pedidos.length
-            : (countByStatus[f as PedidoStatus] ?? 0)
           return (
             <button
               key={f}
-              onClick={() => setStatusFilter(f)}
+              onClick={() => handleStatusFilterChange(f)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full type-overline text-[9px] tracking-widest whitespace-nowrap transition-all duration-200 shrink-0 ${
                 isActive
                   ? 'bg-gradient-gold text-dark-warm font-bold shadow-gold'
@@ -171,25 +251,28 @@ export default function OrdersTab() {
               }`}
             >
               {f === 'Todos' ? 'Todos' : STATUS_LABEL[f as PedidoStatus]}
-              {count > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold ${
-                  isActive ? 'bg-dark-warm/25 text-dark-warm' : 'bg-white/10 text-cream/60'
-                }`}>
-                  {count}
+              {isActive && totalCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-dark-warm/25 text-dark-warm">
+                  {totalCount}
                 </span>
               )}
             </button>
           )
         })}
 
-        <button
-          onClick={fetchPedidos}
-          disabled={loading}
-          title="Atualizar"
-          className="ml-auto w-8 h-8 shrink-0 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/40 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200 disabled:opacity-40"
-        >
-          <ArrowsClockwiseIcon size={13} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="ml-auto relative shrink-0">
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            title="Atualizar"
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/40 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200 disabled:opacity-40"
+          >
+            <ArrowsClockwiseIcon size={13} className={loading ? 'animate-spin' : ''} />
+          </button>
+          {hasNew && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse pointer-events-none" />
+          )}
+        </div>
       </div>
 
       {/* ── Error ─────────────────────────────────────────────────── */}
@@ -224,7 +307,9 @@ export default function OrdersTab() {
           </div>
           <div>
             <h3 className="font-display font-bold text-xl text-cream mb-1">Nenhum pedido</h3>
-            <p className="type-body text-cream/40 text-sm">Os pedidos dos clientes aparecerão aqui.</p>
+            <p className="type-body text-cream/40 text-sm">
+              {statusFilter !== 'Todos' ? `Nenhum pedido com status "${STATUS_LABEL[statusFilter as PedidoStatus]}".` : 'Os pedidos dos clientes aparecerão aqui.'}
+            </p>
           </div>
         </div>
       )}
@@ -232,44 +317,38 @@ export default function OrdersTab() {
       {/* ── Mobile: Card list ─────────────────────────────────────── */}
       {!loading && !error && pedidos.length > 0 && (
         <div className="md:hidden space-y-2">
-          {filtered.length === 0 ? (
-            <div className="py-12 text-center text-cream/30 text-sm font-body">
-              Nenhum pedido com este status.
-            </div>
-          ) : (
-            filtered.map((p, i) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
-                onClick={() => openDetail(p)}
-                className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gold-primary/12 bg-white/3 hover:bg-white/5 active:bg-white/7 cursor-pointer transition-colors duration-200"
-              >
-                {/* Status dot + ID */}
-                <div className="shrink-0">
-                  <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[p.status]} mb-1`} />
-                  <p className="text-cream/30 text-xs font-body tabular-nums">#{p.id}</p>
-                </div>
+          {pedidos.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03, duration: 0.22, ease: EASE }}
+              onClick={() => openDetail(p)}
+              className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gold-primary/12 bg-white/3 hover:bg-white/5 active:bg-white/7 cursor-pointer transition-colors duration-200"
+            >
+              <div className="shrink-0">
+                <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[p.status]} mb-1`} />
+                <p className="text-cream/30 text-xs font-body tabular-nums">#{p.id}</p>
+              </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <StatusBadge status={p.status} />
-                  </div>
-                  <p className="text-cream/50 text-xs font-body">
-                    {formatDate(p.criadoEm)} · {p.itens.length} item{p.itens.length !== 1 ? 'ns' : ''}
-                  </p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <StatusBadge status={p.status} />
                 </div>
+                <p className="text-cream/45 text-xs font-body mt-0.5 truncate">
+                  {p.usuarioNome || <span className="italic">Convidado</span>}
+                </p>
+                <p className="text-cream/30 text-xs font-body">
+                  {formatDate(p.criadoEm)} · {p.itens.length} item{p.itens.length !== 1 ? 'ns' : ''}
+                </p>
+              </div>
 
-                {/* Total + arrow */}
-                <div className="shrink-0 text-right">
-                  <p className="text-gold-light font-bold tabular-nums">{formatCurrency(p.total)}</p>
-                  <CaretRightIcon size={14} className="text-cream/25 ml-auto mt-1" />
-                </div>
-              </motion.div>
-            ))
-          )}
+              <div className="shrink-0 text-right">
+                <p className="text-gold-light font-bold tabular-nums">{formatCurrency(p.total)}</p>
+                <CaretRightIcon size={14} className="text-cream/25 ml-auto mt-1" />
+              </div>
+            </motion.div>
+          ))}
         </div>
       )}
 
@@ -281,6 +360,7 @@ export default function OrdersTab() {
               <tr className="border-b border-gold-primary/15 bg-white/2">
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">#</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Status</th>
+                <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Cliente</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Total</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Data</th>
                 <th className="text-left px-5 py-3.5 type-overline text-[9px] text-gold-primary/50 tracking-widest font-normal">Itens</th>
@@ -289,52 +369,101 @@ export default function OrdersTab() {
             </thead>
             <tbody>
               <AnimatePresence>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-12 text-center text-cream/30 text-sm font-body">
-                      Nenhum pedido com o status selecionado.
+                {pedidos.map((p, i) => (
+                  <motion.tr
+                    key={p.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: i * 0.02, duration: 0.22, ease: EASE }}
+                    onClick={() => openDetail(p)}
+                    className="border-b border-gold-primary/8 last:border-0 hover:bg-white/3 transition-colors duration-200 cursor-pointer"
+                  >
+                    <td className="px-5 py-3.5 text-cream/40 font-body tabular-nums text-xs">#{p.id}</td>
+                    <td className="px-5 py-3.5">
+                      <StatusBadge status={p.status} />
                     </td>
-                  </tr>
-                ) : (
-                  filtered.map((p, i) => (
-                    <motion.tr
-                      key={p.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ delay: i * 0.02, duration: 0.22, ease: EASE }}
-                      onClick={() => openDetail(p)}
-                      className="border-b border-gold-primary/8 last:border-0 hover:bg-white/3 transition-colors duration-200 cursor-pointer"
-                    >
-                      <td className="px-5 py-3.5 text-cream/40 font-body tabular-nums text-xs">#{p.id}</td>
-                      <td className="px-5 py-3.5">
-                        <StatusBadge status={p.status} />
-                      </td>
-                      <td className="px-5 py-3.5 text-cream/90 font-body tabular-nums font-medium">
-                        {formatCurrency(p.total)}
-                      </td>
-                      <td className="px-5 py-3.5 text-cream/50 font-body">
-                        {formatDate(p.criadoEm)}
-                      </td>
-                      <td className="px-5 py-3.5 text-cream/50 font-body">
-                        {p.itens.length} item{p.itens.length !== 1 ? 'ns' : ''}
-                      </td>
-                      <td className="px-5 py-3.5 text-cream/40 font-body text-xs">
-                        {p.formaPagamento || <span className="text-cream/20">—</span>}
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
+                    <td className="px-5 py-3.5 text-cream/70 font-body text-xs">
+                      {p.usuarioNome || <span className="text-cream/25 italic">Convidado</span>}
+                    </td>
+                    <td className="px-5 py-3.5 text-cream/90 font-body tabular-nums font-medium">
+                      {formatCurrency(p.total)}
+                    </td>
+                    <td className="px-5 py-3.5 text-cream/50 font-body">
+                      {formatDate(p.criadoEm)}
+                    </td>
+                    <td className="px-5 py-3.5 text-cream/50 font-body">
+                      {p.itens.length} item{p.itens.length !== 1 ? 'ns' : ''}
+                    </td>
+                    <td className="px-5 py-3.5 text-cream/40 font-body text-xs">
+                      {p.formaPagamento || <span className="text-cream/20">—</span>}
+                    </td>
+                  </motion.tr>
+                ))}
               </AnimatePresence>
             </tbody>
           </table>
         </div>
       )}
 
+      {/* ── Pagination ────────────────────────────────────────────── */}
       {!loading && pedidos.length > 0 && (
-        <p className="type-overline text-[9px] text-cream/25 tracking-widest text-right">
-          {filtered.length} de {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''}
-        </p>
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <p className="type-overline text-[9px] text-cream/25 tracking-widest">
+            {totalCount} pedido{totalCount !== 1 ? 's' : ''} · pág. {page} de {totalPages}
+          </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page === 1}
+                className="w-8 h-8 flex items-center justify-center rounded-xl border border-gold-primary/15 text-cream/40 hover:text-gold-light hover:border-gold-primary/40 transition-all duration-150 disabled:opacity-25 disabled:pointer-events-none"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L4 6l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+
+              {(() => {
+                const pages: (number | '…')[] = []
+                const delta = 1
+                const left = page - delta
+                const right = page + delta
+                for (let i = 1; i <= totalPages; i++) {
+                  if (i === 1 || i === totalPages || (i >= left && i <= right)) {
+                    pages.push(i)
+                  } else if (pages[pages.length - 1] !== '…') {
+                    pages.push('…')
+                  }
+                }
+                return pages.map((p, idx) =>
+                  p === '…' ? (
+                    <span key={`e-${idx}`} className="w-8 h-8 flex items-center justify-center text-cream/25 text-xs">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => handlePageChange(p as number)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-xl text-xs font-body transition-all duration-150 ${
+                        page === p
+                          ? 'bg-gold-primary/15 text-gold-light border border-gold-primary/35 font-bold'
+                          : 'border border-gold-primary/10 text-cream/40 hover:border-gold-primary/30 hover:text-cream/70'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )
+              })()}
+
+              <button
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page === totalPages}
+                className="w-8 h-8 flex items-center justify-center rounded-xl border border-gold-primary/15 text-cream/40 hover:text-gold-light hover:border-gold-primary/40 transition-all duration-150 disabled:opacity-25 disabled:pointer-events-none"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2L8 6l-3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── Order detail modal ────────────────────────────────────── */}
@@ -388,6 +517,21 @@ export default function OrdersTab() {
 
                 {/* Scrollable body */}
                 <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+
+                  {/* O2 — Client info */}
+                  {(selectedPedido.usuarioNome || selectedPedido.usuarioEmail) && (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/3 border border-gold-primary/10">
+                      <UserCircleIcon size={18} className="text-gold-primary/50 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-cream/80 text-sm font-body truncate">
+                          {selectedPedido.usuarioNome || 'Convidado'}
+                        </p>
+                        {selectedPedido.usuarioEmail && (
+                          <p className="text-cream/40 text-xs font-body truncate">{selectedPedido.usuarioEmail}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Items */}
                   <div>
@@ -499,7 +643,6 @@ export default function OrdersTab() {
                         Atualizar status
                       </p>
 
-                      {/* Quick action buttons */}
                       <div className="flex gap-2 flex-wrap mb-4">
                         {proximosStatus.map((s) => (
                           <button
@@ -577,6 +720,8 @@ export default function OrdersTab() {
           </>
         )}
       </AnimatePresence>
+
+      <AdminToast toast={toast} onDismiss={clearToast} />
     </div>
   )
 }

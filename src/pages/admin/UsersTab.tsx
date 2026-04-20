@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   MagnifyingGlassIcon, WarningCircleIcon, XIcon, PlusIcon,
   PencilSimpleIcon, TrashIcon, StarIcon, PhoneIcon, MapPinIcon,
-  ArrowsClockwiseIcon,
+  ArrowsClockwiseIcon, ClipboardTextIcon,
 } from '@phosphor-icons/react'
 import {
   type UserContato, type UserContatoInput,
@@ -275,11 +275,12 @@ function EnderecoForm({ open, initial, loading = false, onSave, onClose }: Ender
 
 type ActiveSection = 'contatos' | 'enderecos'
 
-export default function UsersTab() {
+export default function UsersTab({ onGoToOrders }: { onGoToOrders?: () => void }) {
   // ── Lista de usuários (auto-fetch) ────────────────────────────────────────
   const [usuarios, setUsuarios] = useState<UserListItem[]>([])
   const [usuariosLoading, setUsuariosLoading] = useState(true)
   const [usuariosError, setUsuariosError] = useState('')
+  const [usuariosSearch, setUsuariosSearch] = useState('')
 
   const fetchUsuarios = useCallback(async () => {
     setUsuariosLoading(true)
@@ -335,9 +336,21 @@ export default function UsersTab() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    const id = parseInt(userIdInput)
-    if (!id || id <= 0) { setGlobalError('Informe um ID de usuário válido.'); return }
-    loadUserData(id)
+    const raw = userIdInput.trim()
+    if (!raw) { setGlobalError('Informe um nome, e-mail ou ID.'); return }
+    const numericId = parseInt(raw)
+    if (!isNaN(numericId) && String(numericId) === raw && numericId > 0) {
+      loadUserData(numericId)
+      return
+    }
+    const match = usuarios.find(
+      (u) => u.nome?.toLowerCase().includes(raw.toLowerCase()) || String(u.id) === raw,
+    )
+    if (match) {
+      loadUserData(match.id)
+    } else {
+      setGlobalError('Nenhum usuário encontrado com esse nome ou ID.')
+    }
   }
 
   // ── Contatos handlers ──────────────────────────────────────────────────────
@@ -459,42 +472,61 @@ export default function UsersTab() {
         )}
 
         {!usuariosLoading && usuarios.length > 0 && (
-          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
-            {usuarios.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => { setUserIdInput(String(u.id)); loadUserData(u.id) }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left transition-all duration-200 ${
-                  userId === u.id
-                    ? 'bg-gold-primary/10 border-gold-primary/30'
-                    : 'bg-white/3 border-white/5 hover:border-gold-primary/20 hover:bg-white/5'
-                }`}
-              >
-                <div className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 text-xs font-display font-bold ${
-                  u.isActive
-                    ? 'bg-gold-primary/15 border-gold-primary/30 text-gold-light'
-                    : 'bg-white/5 border-white/10 text-cream/30'
-                }`}>
-                  {u.id}
-                </div>
-                <p className={`flex-1 min-w-0 text-sm font-body truncate ${u.isActive ? 'text-cream/80' : 'text-cream/30 line-through'}`}>
-                  {u.nome ?? '—'}
-                </p>
-                {u.lastLoginAt && (
-                  <span className="text-cream/30 text-[10px] font-body shrink-0 hidden sm:block">
-                    {new Date(u.lastLoginAt).toLocaleDateString('pt-BR')}
-                  </span>
-                )}
-                <span className={`px-1.5 py-0.5 rounded-full type-overline text-[8px] tracking-widest shrink-0 ${
-                  u.role === 'Admin'
-                    ? 'bg-gold-primary/15 text-gold-light'
-                    : 'bg-white/5 text-cream/40'
-                }`}>
-                  {u.role ?? '—'}
-                </span>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="relative">
+              <MagnifyingGlassIcon size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gold-primary/40 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Filtrar por nome ou ID..."
+                value={usuariosSearch}
+                onChange={(e) => setUsuariosSearch(e.target.value)}
+                className="w-full bg-white/5 border border-gold-primary/12 hover:border-gold-primary/25 focus:border-gold-primary/50 rounded-xl pl-9 pr-4 py-2 text-cream placeholder-cream/20 text-xs outline-none transition-[border-color] duration-300"
+              />
+            </div>
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
+              {usuarios
+                .filter((u) =>
+                  !usuariosSearch ||
+                  u.nome?.toLowerCase().includes(usuariosSearch.toLowerCase()) ||
+                  String(u.id).includes(usuariosSearch),
+                )
+                .map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => { setUserIdInput(String(u.id)); loadUserData(u.id) }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left transition-all duration-200 ${
+                      userId === u.id
+                        ? 'bg-gold-primary/10 border-gold-primary/30'
+                        : 'bg-white/3 border-white/5 hover:border-gold-primary/20 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 text-xs font-display font-bold ${
+                      u.isActive
+                        ? 'bg-gold-primary/15 border-gold-primary/30 text-gold-light'
+                        : 'bg-white/5 border-white/10 text-cream/30'
+                    }`}>
+                      {u.id}
+                    </div>
+                    <p className={`flex-1 min-w-0 text-sm font-body truncate ${u.isActive ? 'text-cream/80' : 'text-cream/30 line-through'}`}>
+                      {u.nome ?? '—'}
+                    </p>
+                    {u.lastLoginAt && (
+                      <span className="text-cream/30 text-[10px] font-body shrink-0 hidden sm:block">
+                        {new Date(u.lastLoginAt).toLocaleDateString('pt-BR')}
+                      </span>
+                    )}
+                    <span className={`px-1.5 py-0.5 rounded-full type-overline text-[8px] tracking-widest shrink-0 ${
+                      u.role === 'Admin'
+                        ? 'bg-gold-primary/15 text-gold-light'
+                        : 'bg-white/5 text-cream/40'
+                    }`}>
+                      {u.role ?? '—'}
+                    </span>
+                  </button>
+                ))
+              }
+            </div>
+          </>
         )}
       </div>
 
@@ -504,11 +536,10 @@ export default function UsersTab() {
         <div className="relative flex-1 max-w-xs">
           <MagnifyingGlassIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gold-primary/40 pointer-events-none" />
           <input
-            type="number"
-            placeholder="ID do usuário..."
+            type="text"
+            placeholder="Buscar por nome, e-mail ou ID..."
             value={userIdInput}
             onChange={(e) => { setUserIdInput(e.target.value); setGlobalError('') }}
-            min={1}
             className="w-full bg-white/5 border border-gold-primary/15 hover:border-gold-primary/30 focus:border-gold-primary/60 rounded-xl pl-9 pr-4 py-2.5 text-cream placeholder-cream/25 text-sm outline-none transition-[border-color] duration-300"
           />
         </div>
@@ -568,13 +599,23 @@ export default function UsersTab() {
               <div className="w-9 h-9 rounded-full bg-gold-primary/20 border border-gold-primary/30 flex items-center justify-center shrink-0">
                 <span className="font-display font-bold text-gold-light text-sm">{userId}</span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="type-overline text-[9px] text-gold-primary/50 tracking-widest">Usuário carregado</p>
                 <p className="text-cream/80 text-sm font-body">ID #{userId} · {contatos.length} contato{contatos.length !== 1 ? 's' : ''} · {enderecos.length} endereço{enderecos.length !== 1 ? 's' : ''}</p>
               </div>
+              {onGoToOrders && (
+                <button
+                  onClick={onGoToOrders}
+                  title="Ver pedidos"
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/50 text-[10px] type-overline tracking-widest transition-all duration-200 shrink-0"
+                >
+                  <ClipboardTextIcon size={12} />
+                  Pedidos
+                </button>
+              )}
               <button
                 onClick={() => { setUserId(null); setUserIdInput(''); setContatos([]); setEnderecos([]) }}
-                className="ml-auto w-7 h-7 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/40 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200"
+                className="w-7 h-7 flex items-center justify-center rounded-full border border-gold-primary/20 text-cream/40 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200 shrink-0"
               >
                 <XIcon size={12} />
               </button>

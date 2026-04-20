@@ -201,15 +201,17 @@ export interface GetProductsParams {
   marca?: string
   busca?: string
   destaque?: boolean
+  isVisivel?: boolean
 }
 
 export const getProducts = (params: GetProductsParams = {}) => {
-  const { page = 1, pageSize = 50, categoria, marca, busca, destaque } = params
+  const { page = 1, pageSize = 50, categoria, marca, busca, destaque, isVisivel } = params
   const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
   if (categoria) q.set('categoria', categoria)
   if (marca) q.set('marca', marca)
   if (busca) q.set('busca', busca)
   if (destaque !== undefined) q.set('destaque', String(destaque))
+  if (isVisivel !== undefined) q.set('isVisivel', String(isVisivel))
   return apiFetch<PagedResult<Product>>(`/api/admin/produtos?${q}`)
 }
 

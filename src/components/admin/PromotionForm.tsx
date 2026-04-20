@@ -17,32 +17,42 @@ const EMPTY: PromocaoCreateInput = {
 interface Props {
   open: boolean
   initial?: Promocao | null
+  prefill?: Partial<PromocaoCreateInput>
   loading?: boolean
   onSave: (data: PromocaoCreateInput) => void
   onClose: () => void
 }
 
-export default function PromotionForm({ open, initial, loading = false, onSave, onClose }: Props) {
+export default function PromotionForm({ open, initial, prefill, loading = false, onSave, onClose }: Props) {
   const [form, setForm] = useState<PromocaoCreateInput>(EMPTY)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  useEffect(() => {
     if (open) {
-      setForm(
-        initial
-          ? {
-              nome: initial.nome,
-              descricao: initial.descricao ?? '',
-              tipoDesconto: initial.tipoDesconto,
-              valorDesconto: initial.valorDesconto,
-              dataInicio: initial.dataInicio.slice(0, 10),
-              dataFim: initial.dataFim.slice(0, 10),
-            }
-          : EMPTY,
-      )
+      if (initial) {
+        setForm({
+          nome: initial.nome,
+          descricao: initial.descricao ?? '',
+          tipoDesconto: initial.tipoDesconto,
+          valorDesconto: initial.valorDesconto,
+          dataInicio: initial.dataInicio.slice(0, 10),
+          dataFim: initial.dataFim.slice(0, 10),
+        })
+      } else if (prefill) {
+        setForm({ ...EMPTY, ...prefill })
+      } else {
+        setForm(EMPTY)
+      }
       setError('')
     }
-  }, [open, initial])
+  }, [open, initial, prefill])
 
   const set = <K extends keyof PromocaoCreateInput>(key: K, value: PromocaoCreateInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))

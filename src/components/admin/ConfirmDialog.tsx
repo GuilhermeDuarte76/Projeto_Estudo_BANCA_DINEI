@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WarningCircleIcon, XIcon } from '@phosphor-icons/react'
 import { EASE } from '../../lib/motion'
@@ -22,6 +23,13 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: Props) {
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onCancel])
+
   return (
     <AnimatePresence>
       {open && (

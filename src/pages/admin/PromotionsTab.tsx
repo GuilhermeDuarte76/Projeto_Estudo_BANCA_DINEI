@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon,
-  WarningCircleIcon, TagIcon, XIcon, PackageIcon,
+  WarningCircleIcon, TagIcon, XIcon, PackageIcon, CopyIcon,
 } from '@phosphor-icons/react'
 import {
   type Promocao,
@@ -19,6 +19,7 @@ import {
 import { getProducts, type Product } from '../../services/admin'
 import PromotionForm from '../../components/admin/PromotionForm'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
+import { AdminToast, useAdminToast } from '../../components/admin/AdminToast'
 import { EASE } from '../../lib/motion'
 
 
@@ -41,6 +42,18 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR')
 }
 
+function formatDataFim(dataFim: string | null) {
+  if (!dataFim) return <span className="text-cream/30 italic text-xs">Sem data de término</span>
+  const d = new Date(dataFim)
+  const vencida = d < new Date()
+  return (
+    <span className={vencida ? 'text-red-400/70' : 'text-cream/60'}>
+      {d.toLocaleDateString('pt-BR')}
+      {vencida && <span className="ml-1 text-[10px]">(vencida)</span>}
+    </span>
+  )
+}
+
 function formatCurrency(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
@@ -53,10 +66,13 @@ export default function PromotionsTab() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Promocao | null>(null)
+  const [duplicatePrefill, setDuplicatePrefill] = useState<Partial<PromocaoCreateInput> | undefined>(undefined)
   const [formLoading, setFormLoading] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<Promocao | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const { toast, showToast, clearToast } = useAdminToast()
 
   // Products management modal
   const [produtosPromoOpen, setProdutosPromoOpen] = useState(false)
@@ -91,21 +107,43 @@ export default function PromotionsTab() {
     if (res.success) {
       setFormOpen(false)
       setEditTarget(null)
+      setDuplicatePrefill(undefined)
+      showToast('success', editTarget ? 'Promoção atualizada.' : 'Promoção criada.')
       fetchPromocoes()
+    } else {
+      showToast('error', res.message || 'Não foi possível salvar a promoção.')
     }
   }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleteLoading(true)
-    await deletePromocao(deleteTarget.id)
+    const res = await deletePromocao(deleteTarget.id)
     setDeleteLoading(false)
+    const nome = deleteTarget.nome
     setDeleteTarget(null)
+    if (res.success) {
+      showToast('success', `"${nome}" foi desativada.`)
+    } else {
+      showToast('error', res.message || 'Não foi possível desativar a promoção.')
+    }
     fetchPromocoes()
   }
 
-  const openCreate = () => { setEditTarget(null); setFormOpen(true) }
-  const openEdit = (p: Promocao) => { setEditTarget(p); setFormOpen(true) }
+  const openCreate = () => { setEditTarget(null); setDuplicatePrefill(undefined); setFormOpen(true) }
+  const openEdit = (p: Promocao) => { setEditTarget(p); setDuplicatePrefill(undefined); setFormOpen(true) }
+  const openDuplicate = (p: Promocao) => {
+    setEditTarget(null)
+    setDuplicatePrefill({
+      nome: `Cópia de — ${p.nome}`,
+      tipoDesconto: p.tipoDesconto,
+      valorDesconto: p.valorDesconto,
+      descricao: p.descricao ?? '',
+      dataInicio: '',
+      dataFim: '',
+    })
+    setFormOpen(true)
+  }
 
   const openProdutosModal = async (p: Promocao) => {
     setProdutosPromoTarget(p)
@@ -234,7 +272,7 @@ export default function PromotionsTab() {
                         {formatDesconto(p)} {p.tipoDesconto === 'Percentual' ? 'off' : 'desconto'}
                       </span>
                       <span className="text-cream/35 text-xs font-body">
-                        {formatDate(p.dataInicio)} → {formatDate(p.dataFim)}
+                        {formatDate(p.dataInicio)} → {formatDataFim(p.dataFim ?? null)}
                       </span>
                     </div>
                   </div>
@@ -247,6 +285,13 @@ export default function PromotionsTab() {
                       Produtos
                     </button>
                     <div className="ml-auto flex items-center gap-1">
+                      <button
+                        onClick={() => openDuplicate(p)}
+                        title="Duplicar"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gold-primary/20 text-cream/50 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200"
+                      >
+                        <CopyIcon size={14} />
+                      </button>
                       <button
                         onClick={() => openEdit(p)}
                         className="w-8 h-8 flex items-center justify-center rounded-lg border border-gold-primary/20 text-cream/50 hover:text-gold-light hover:border-gold-primary/50 transition-all duration-200"
@@ -316,8 +361,8 @@ export default function PromotionsTab() {
                           <p className="text-cream/60 font-body text-xs whitespace-nowrap">
                             {formatDate(p.dataInicio)}
                           </p>
-                          <p className="text-cream/30 font-body text-xs whitespace-nowrap">
-                            até {formatDate(p.dataFim)}
+                          <p className="font-body text-xs whitespace-nowrap">
+                            até {formatDataFim(p.dataFim ?? null)}
                           </p>
                         </td>
                         <td className="px-5 py-3.5">
@@ -333,6 +378,13 @@ export default function PromotionsTab() {
                               className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-200"
                             >
                               <TagIcon size={13} />
+                            </button>
+                            <button
+                              onClick={() => openDuplicate(p)}
+                              title="Duplicar"
+                              className="w-8 h-8 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-200"
+                            >
+                              <CopyIcon size={13} />
                             </button>
                             <button
                               onClick={() => openEdit(p)}
@@ -369,9 +421,10 @@ export default function PromotionsTab() {
       <PromotionForm
         open={formOpen}
         initial={editTarget}
+        prefill={duplicatePrefill}
         loading={formLoading}
         onSave={handleSave}
-        onClose={() => { setFormOpen(false); setEditTarget(null) }}
+        onClose={() => { setFormOpen(false); setEditTarget(null); setDuplicatePrefill(undefined) }}
       />
 
       <ConfirmDialog
@@ -383,6 +436,8 @@ export default function PromotionsTab() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <AdminToast toast={toast} onDismiss={clearToast} />
 
       {/* Products management modal */}
       <AnimatePresence>
