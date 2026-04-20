@@ -19,6 +19,21 @@ export interface PromocaoVigente {
   valorDesconto: number
 }
 
+export interface ProdutoVariante {
+  id: number
+  label: string
+  descricao?: string | null
+  preco: number
+  ordem: number
+}
+
+export interface VarianteInput {
+  label: string
+  descricao?: string | null
+  preco: number
+  ordem?: number
+}
+
 export interface Product {
   id: number
   nome: string
@@ -40,6 +55,7 @@ export interface Product {
   criadoEm: string
   atualizadoEm: string
   promocaoVigente?: PromocaoVigente | null
+  variantes?: ProdutoVariante[]
 }
 
 export type ProductCreateInput = {
@@ -57,6 +73,7 @@ export type ProductCreateInput = {
   sabores?: string | null
   tipos?: string | null
   isVisivel?: boolean
+  variantes?: VarianteInput[]
 }
 
 export type ProductUpdateInput = ProductCreateInput

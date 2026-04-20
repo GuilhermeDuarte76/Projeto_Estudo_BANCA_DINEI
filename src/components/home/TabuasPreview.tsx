@@ -1,22 +1,47 @@
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRightIcon, CheeseIcon } from '@phosphor-icons/react';
-import { TABUAS } from '../../data/tabuas';
-import caprese from '../../assets/caprese.png';
-import taboaFrios from '../../assets/taboaFrios.jpg';
-import frios from '../../assets/frios.jpg';
-import SectionDivider from '../layout/SectionDivider';
-import TabuaCard from '../tabuas/TabuaCard';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { ArrowRightIcon, CheeseIcon } from '@phosphor-icons/react'
+import SectionDivider from '../layout/SectionDivider'
+import ProdutoCard, { type ProdutoPublico } from '../catalogo/ProdutoCard'
 import { EASE } from '../../lib/motion'
+import { apiFetch } from '../../services/api'
+import type { PagedResult } from '../../services/admin'
 
+function SkeletonCard() {
+  return (
+    <div className="h-full rounded-2xl bg-cream border border-gold-primary/15 animate-pulse min-h-[360px]">
+      <div className="h-[220px] bg-gold-primary/10 rounded-t-2xl" />
+      <div className="p-4 flex flex-col gap-3">
+        <div className="h-3 bg-gold-primary/10 rounded-full w-3/4" />
+        <div className="h-3 bg-gold-primary/10 rounded-full w-1/2" />
+      </div>
+    </div>
+  )
+}
 
 export default function TabuasPreview() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const [tabuas, setTabuas] = useState<ProdutoPublico[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const params = new URLSearchParams({
+      categoria: 'Tábuas',
+      pageSize: '2',
+      destaque: 'true',
+      ordenarPor: 'nome',
+    })
+    apiFetch<PagedResult<ProdutoPublico>>(`/api/produtos?${params}`)
+      .then((r) => {
+        if (r.success && r.data) setTabuas(r.data.items)
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <section className="bg-beige py-20 px-6 lg:px-16">
       <div className="max-w-[1400px] mx-auto">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -36,7 +61,7 @@ export default function TabuasPreview() {
           </div>
 
           <button
-            onClick={() => { navigate('/tabuas'); window.scrollTo({ top: 0 }); }}
+            onClick={() => { navigate('/tabuas'); window.scrollTo({ top: 0 }) }}
             className="group self-start sm:self-end flex items-center gap-3 border border-gold-primary/50 text-gold-primary font-body font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-full transition-all duration-300 hover:bg-gold-primary hover:text-dark-warm hover:border-gold-primary"
           >
             Ver cardápio completo
@@ -50,13 +75,17 @@ export default function TabuasPreview() {
 
         <SectionDivider className="mb-10 -mt-2" />
 
-        {/* Grid — 2 tábuas em destaque */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <TabuaCard tabua={TABUAS[0]} index={0} scrollImages={[taboaFrios, frios]} />
-          <TabuaCard tabua={{ ...TABUAS[1], image: caprese }} index={1} />
+          {loading ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : tabuas.length > 0 ? (
+            tabuas.map((t, i) => <ProdutoCard key={t.id} produto={t} index={i} />)
+          ) : null}
         </div>
 
-        {/* CTA bottom */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -65,7 +94,7 @@ export default function TabuasPreview() {
           className="flex justify-center"
         >
           <button
-            onClick={() => { navigate('/tabuas'); window.scrollTo({ top: 0 }); }}
+            onClick={() => { navigate('/tabuas'); window.scrollTo({ top: 0 }) }}
             className="group flex items-center gap-3 bg-graphite text-cream font-body font-bold uppercase tracking-wider text-xs px-8 py-4 rounded-full transition-all duration-300 hover:bg-dark-warm hover:-translate-y-px"
           >
             Ver todas as tábuas
@@ -78,5 +107,5 @@ export default function TabuasPreview() {
         </motion.div>
       </div>
     </section>
-  );
+  )
 }

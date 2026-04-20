@@ -1,10 +1,10 @@
-import TabuasDestaque from '../components/tabuas/TabuasDestaque'
+import CatalogSection from '../components/catalogo/CatalogSection'
 import MonteSuaTabua from '../components/tabuas/MonteSuaTabua'
 
 export default function TabuasPage() {
   return (
     <>
-      <TabuasDestaque />
+      <CatalogSection titulo="Tábuas" subtituloItalico="artesanais" categoria="Tábuas" />
       <MonteSuaTabua />
     </>
   )

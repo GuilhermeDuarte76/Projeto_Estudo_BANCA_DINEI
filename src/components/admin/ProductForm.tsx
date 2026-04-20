@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   XIcon, WarningCircleIcon, ImageIcon,
   CheckCircleIcon, StarIcon, PencilSimpleIcon,
+  PlusIcon, TrashIcon, InfoIcon,
 } from '@phosphor-icons/react'
 import {
   type Product,
   type ProductCreateInput,
   type NacionalidadeSimples,
+  type VarianteInput,
   UNIDADES_OPTIONS,
   uploadImage,
   getCategorias,
@@ -45,6 +47,8 @@ const EMPTY_FORM: ProductCreateInput = {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type FieldErrors = Partial<Record<string, string>>
+
+type VarianteRow = { label: string; descricao: string; precoCents: number }
 
 interface Props {
   open: boolean
@@ -102,6 +106,7 @@ export default function ProductForm({ open, initial, loading = false, serverErro
   const [saboresChips, setSaboresChips] = useState<string[]>([])
   const [tiposChips, setTiposChips] = useState<string[]>([])
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [variantesRows, setVariantesRows] = useState<VarianteRow[]>([])
 
   // Image upload
   const [uploading, setUploading] = useState(false)
@@ -189,6 +194,13 @@ export default function ProductForm({ open, initial, loading = false, serverErro
       setPrecoCents(cents)
       setSaboresChips(parseCSV(initial.sabores))
       setTiposChips(parseCSV(initial.tipos))
+      setVariantesRows(
+        (initial.variantes ?? []).map((v) => ({
+          label: v.label,
+          descricao: v.descricao ?? '',
+          precoCents: Math.round(v.preco * 100),
+        }))
+      )
       setForm({
         nome: initial.nome ?? '',
         descricao: initial.descricao ?? null,
@@ -209,6 +221,7 @@ export default function ProductForm({ open, initial, loading = false, serverErro
       setPrecoCents(0)
       setSaboresChips([])
       setTiposChips([])
+      setVariantesRows([])
       setForm(EMPTY_FORM)
     }
   }, [open, initial])
@@ -286,7 +299,8 @@ export default function ProductForm({ open, initial, loading = false, serverErro
     if (!form.nome || form.nome.trim().length < 3) {
       errs.nome = 'Nome deve ter pelo menos 3 caracteres'
     }
-    if (!form.preco || form.preco <= 0) {
+    const hasVariantes = variantesRows.some((r) => r.label.trim() && r.precoCents > 0)
+    if (!hasVariantes && (!form.preco || form.preco <= 0)) {
       errs.preco = 'Preço deve ser maior que R$ 0,00'
     }
     if (!form.categoria || !form.categoria.trim()) {
@@ -312,10 +326,25 @@ export default function ProductForm({ open, initial, loading = false, serverErro
     e.preventDefault()
     if (!validate()) return
 
+    const variantes: VarianteInput[] = variantesRows
+      .filter((r) => r.label.trim() && r.precoCents > 0)
+      .map((r, i) => ({
+        label: r.label.trim(),
+        descricao: r.descricao.trim() || null,
+        preco: r.precoCents / 100,
+        ordem: i,
+      }))
+
+    const precoFinal = variantes.length > 0
+      ? Math.min(...variantes.map((v) => v.preco))
+      : form.preco
+
     const payload: ProductCreateInput = {
       ...form,
+      preco: precoFinal,
       sabores: saboresChips.length > 0 ? saboresChips.join(',') : null,
       tipos: tiposChips.length > 0 ? tiposChips.join(',') : null,
+      variantes: variantes.length > 0 ? variantes : undefined,
     }
 
     onSave(payload)
@@ -507,6 +536,78 @@ export default function ProductForm({ open, initial, loading = false, serverErro
                         className={inputClass}
                       />
                     </Field>
+                  </div>
+
+                  {/* LINHA 4b — Variantes de preço */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="type-overline text-[9px] text-cream/40 tracking-widest uppercase">
+                        Variantes de preço
+                        <span className="text-cream/25 ml-1 normal-case tracking-normal not-uppercase font-body">(Baby, Média, Grande...)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setVariantesRows((v) => [...v, { label: '', descricao: '', precoCents: 0 }])}
+                        className="flex items-center gap-1 text-[10px] type-overline text-gold-primary/70 hover:text-gold-primary transition-colors duration-200 border border-gold-primary/20 hover:border-gold-primary/50 px-2.5 py-1 rounded-full"
+                      >
+                        <PlusIcon size={9} weight="bold" />
+                        Adicionar
+                      </button>
+                    </div>
+
+                    {variantesRows.length > 0 && (
+                      <div className="space-y-2 mb-2">
+                        {variantesRows.map((row, idx) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <input
+                              type="text"
+                              placeholder="Label (ex: Baby)"
+                              value={row.label}
+                              onChange={(e) => setVariantesRows((v) => v.map((r, i) => i === idx ? { ...r, label: e.target.value } : r))}
+                              className={`${inputClass} flex-[2] text-xs`}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Descrição (ex: 550g)"
+                              value={row.descricao}
+                              onChange={(e) => setVariantesRows((v) => v.map((r, i) => i === idx ? { ...r, descricao: e.target.value } : r))}
+                              className={`${inputClass} flex-[2] text-xs`}
+                            />
+                            <div className="relative flex-[1.5]">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cream/30 text-xs pointer-events-none">R$</span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="0,00"
+                                value={formatMoney(row.precoCents)}
+                                onChange={(e) => {
+                                  const cents = parseInt(e.target.value.replace(/\D/g, '')) || 0
+                                  setVariantesRows((v) => v.map((r, i) => i === idx ? { ...r, precoCents: cents } : r))
+                                }}
+                                className={`${inputClass} pl-9 text-xs`}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setVariantesRows((v) => v.filter((_, i) => i !== idx))}
+                              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-red-500/20 text-red-400/60 hover:border-red-500/50 hover:text-red-400 transition-all duration-200"
+                            >
+                              <TrashIcon size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {variantesRows.some((r) => r.precoCents > 0) && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gold-primary/8 border border-gold-primary/15">
+                        <InfoIcon size={12} className="text-gold-primary/60 shrink-0" />
+                        <p className="text-[10px] font-body text-cream/40">
+                          Preço base será automaticamente o menor valor das variantes
+                          {' '}(R$ {formatMoney(Math.min(...variantesRows.filter(r => r.precoCents > 0).map(r => r.precoCents)))})
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* LINHA 5 — Categoria + Marca */}
