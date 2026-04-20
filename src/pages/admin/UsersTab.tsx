@@ -13,8 +13,8 @@ import {
   getEnderecos, createEndereco, updateEndereco, setEnderecoPrincipal, deleteEndereco,
   getAdminUsuarios,
 } from '../../services/usuarios'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 const TIPOS_CONTATO: TipoContato[] = ['Celular', 'Fixo', 'WhatsApp']
 

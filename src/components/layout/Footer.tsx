@@ -53,7 +53,7 @@ export default function Footer() {
             </p>
 
             <a
-              href="https://wa.me/5534321220099?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20fazer%20um%20pedido."
+              href="https://wa.me/5534991633698?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20fazer%20um%20pedido."
               target="_blank"
               rel="noopener noreferrer"
               className="self-start flex items-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-full transition-all duration-300 hover:-translate-y-px hover:shadow-gold"
@@ -114,7 +114,7 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <WhatsappLogoIcon size={16} weight="light" className="text-gold-primary flex-shrink-0" />
               <a
-                href="https://wa.me/5534321220099"
+                href="https://wa.me/5534991633698"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="type-body text-cream/70 text-sm hover:text-gold-light transition-colors duration-300"

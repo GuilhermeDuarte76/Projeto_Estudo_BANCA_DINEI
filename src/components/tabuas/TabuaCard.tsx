@@ -3,8 +3,8 @@ import { motion, useInView, AnimatePresence, useScroll, useMotionValueEvent } fr
 import { CrownIcon, PlusIcon, ShoppingCartIcon, CheckIcon } from '@phosphor-icons/react';
 import { type Tabua } from '../../data/tabuas';
 import { useCart } from '../../context/CartContext';
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 interface TabuaCardProps {
   tabua: Tabua;

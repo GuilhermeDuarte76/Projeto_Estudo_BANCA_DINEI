@@ -18,10 +18,10 @@ import {
 } from '../../services/admin'
 import ChipInput from './ChipInput'
 import SearchableSelect from './SearchableSelect'
+import { EASE } from '../../lib/motion'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp']

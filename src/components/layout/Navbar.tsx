@@ -5,8 +5,8 @@ import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon, User
 import logo from '../../assets/logo.png';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 type SubLink = { label: string; href: string };
 type NavLink = { label: string; href: string; children?: SubLink[] };

@@ -7,8 +7,8 @@ import taboaFrios from '../../assets/taboaFrios.jpg';
 import frios from '../../assets/frios.jpg';
 import SectionDivider from '../layout/SectionDivider';
 import TabuaCard from '../tabuas/TabuaCard';
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 export default function TabuasPreview() {
   const navigate = useNavigate();

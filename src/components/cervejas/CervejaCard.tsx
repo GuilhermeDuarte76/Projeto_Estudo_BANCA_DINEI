@@ -3,9 +3,9 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { ShoppingCartIcon, CheckIcon, CrownIcon, TagIcon } from '@phosphor-icons/react';
 import { useCart } from '../../context/CartContext';
 import { type ProdutoPublico } from '../catalogo/ProdutoCard';
+import { EASE } from '../../lib/motion'
 
 const GOLD = '#DFA62B';
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 const PLACEHOLDER = 'https://picsum.photos/seed/cerveja/800/600';
 
 /** Converte **texto** em <strong> inline, preservando o restante como string */

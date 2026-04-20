@@ -2,8 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRightIcon } from '@phosphor-icons/react';
 import logoLouvada from '../../assets/cervejaria-louvada.png';
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 const LOUVADA_GOLD = '#DFA62B';
 
 const CODIGOS_HONRA = ['Devoção', 'Honradez', 'Majestade', 'Tradição', 'Parceria', 'Celebração'];

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ClipboardTextIcon, CaretDownIcon, WarningCircleIcon,
@@ -7,8 +6,8 @@ import {
 } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext'
 import { getPedidos, type Pedido, type PedidoStatus } from '../services/pedidos'
+import { EASE } from '../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
@@ -168,7 +167,7 @@ function PedidoCard({ pedido, index }: { pedido: Pedido; index: number }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PedidosPage() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -190,8 +189,6 @@ export default function PedidosPage() {
     if (isAuthenticated) fetchPedidos(filterStatus)
   }, [isAuthenticated, filterStatus, fetchPedidos])
 
-  if (isLoading) return null
-  if (!isAuthenticated) return <Navigate to="/" replace />
 
   return (
     <section className="min-h-screen bg-dark-warm pt-24 pb-16 px-4">

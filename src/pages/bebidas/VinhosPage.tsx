@@ -10,14 +10,16 @@ import {
   Tag as TagIcon,
   Crown as CrownIcon,
   CaretDown,
+  Star as StarIcon,
 } from '@phosphor-icons/react'
 import { apiFetch } from '../../services/api'
 import { useCart } from '../../context/CartContext'
 import SectionDivider from '../../components/layout/SectionDivider'
 import HarmonizacoesModal from '../../components/vinhos/HarmonizacoesModal'
 import { type ProdutoPublico } from '../../components/catalogo/ProdutoCard'
+import { EASE } from '../../lib/motion'
 
-/* ── Generic wine‑bottle SVG (no brand / no label) ─────────────────── */
+/* ── Generic wine‑bottle SVG placeholder ────────────────────── */
 const WINE_BOTTLE_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600">
     <rect width="400" height="600" fill="#1E0808"/>
@@ -27,14 +29,11 @@ const WINE_BOTTLE_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(
       <path d="M49 91C49 91,24 130,24 190L24 440C24 462,38 480,60 480C82 480,96 462,96 440L96 190C96 130,71 91,71 91Z" fill="#2D0A0A" stroke="#B8860B" stroke-width="1.5" opacity=".55"/>
       <ellipse cx="60" cy="480" rx="36" ry="7" fill="#B8860B" opacity=".12"/>
       <rect x="36" y="240" width="48" height="70" rx="3" fill="none" stroke="#B8860B" stroke-width=".7" opacity=".2"/>
-      <line x1="44" y1="265" x2="76" y2="265" stroke="#B8860B" stroke-width=".5" opacity=".15"/>
-      <line x1="48" y1="280" x2="72" y2="280" stroke="#B8860B" stroke-width=".5" opacity=".15"/>
-      <line x1="50" y1="295" x2="70" y2="295" stroke="#B8860B" stroke-width=".5" opacity=".15"/>
     </g>
   </svg>`,
 )}`
 
-/* ── Types ──────────────────────────────────────────────────────────── */
+/* ── Types ──────────────────────────────────────────────────── */
 interface NacionalidadeFiltro {
   id: number
   nome: string
@@ -58,7 +57,6 @@ interface PagedResult<T> {
   totalPages: number
 }
 
-/* ── Extended product type (API returns extra fields for wines) ───── */
 interface NacionalidadeProduto {
   id: number
   nome: string
@@ -71,172 +69,110 @@ interface VinhoProduto extends ProdutoPublico {
   nacionalidade?: NacionalidadeProduto
 }
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
+type SortOpt = { label: string; ordenarPor: string; ordem: string }
+const SORT_OPTIONS: SortOpt[] = [
+  { label: 'Padrão',       ordenarPor: 'criadoEm', ordem: 'desc' },
+  { label: 'Nome A–Z',     ordenarPor: 'nome',     ordem: 'asc'  },
+  { label: 'Menor preço',  ordenarPor: 'preco',    ordem: 'asc'  },
+  { label: 'Maior preço',  ordenarPor: 'preco',    ordem: 'desc' },
+]
 
-/* ── FilterSelect — searchable dropdown styled for dark theme ──────── */
-interface FilterOption {
-  value: string
-  label: string
-  icon?: React.ReactNode
-}
+type PopoverId = 'sort' | 'tipo' | 'origem' | 'marca'
 
-function FilterSelect({
-  placeholder,
-  options,
-  value,
-  onChange,
+/* ── Dark-theme filter button ────────────────────────────────── */
+function DarkFilterBtn({
+  label,
+  isActive,
+  isOpen,
+  onClick,
 }: {
-  placeholder: string
-  options: FilterOption[]
-  value: string
-  onChange: (v: string) => void
+  label: string
+  isActive: boolean
+  isOpen: boolean
+  onClick: () => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const filtered = query
-    ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
-    : options
-
-  const selected = options.find((o) => o.value === value)
-
-  /* close on outside click */
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  /* close on Escape */
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setOpen(false); setQuery('') }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open])
-
-  const handleSelect = useCallback((v: string) => {
-    onChange(v)
-    setOpen(false)
-    setQuery('')
-  }, [onChange])
-
   return (
-    <div ref={containerRef} className="relative min-w-[160px]">
-      {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => {
-          setOpen(!open)
-          if (!open) setTimeout(() => inputRef.current?.focus(), 50)
-        }}
-        className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border font-body text-sm transition-all duration-300 text-left ${
-          value
-            ? 'border-gold-light/40 bg-gold-primary/10 text-gold-light'
-            : 'border-gold-light/15 bg-white/[0.03] text-cream/60 hover:border-gold-light/30 hover:text-cream/80'
-        } ${open ? 'border-gold-light/50 bg-white/[0.06]' : ''}`}
-      >
-        {selected?.icon && <span className="flex-shrink-0">{selected.icon}</span>}
-        <span className="flex-1 truncate">{selected ? selected.label : placeholder}</span>
-        <CaretDown
-          size={12}
-          weight="bold"
-          className={`flex-shrink-0 text-cream/30 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(160deg, #1E0808 0%, #140606 100%)',
-              border: '1px solid rgba(200,160,74,0.2)',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(200,160,74,0.08)',
-            }}
-          >
-            {/* Search input inside dropdown */}
-            <div className="p-2 border-b border-white/[0.06]">
-              <div className="relative">
-                <MagnifyingGlass
-                  size={13}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cream/25"
-                />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Filtrar..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-cream font-body text-xs placeholder:text-cream/25 focus:outline-none focus:border-gold-light/30 transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Options list */}
-            <div className="max-h-52 overflow-y-auto py-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(200,160,74,0.2) transparent' }}>
-              {/* "All" option */}
-              <button
-                type="button"
-                onClick={() => handleSelect('')}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-left font-body text-xs transition-all duration-150 ${
-                  !value
-                    ? 'bg-gold-primary/10 text-gold-light'
-                    : 'text-cream/50 hover:bg-white/[0.04] hover:text-cream/80'
-                }`}
-              >
-                <span className="flex-1">{placeholder}</span>
-                {!value && (
-                  <CheckIcon size={12} weight="bold" className="text-gold-light flex-shrink-0" />
-                )}
-              </button>
-
-              {filtered.length === 0 && (
-                <p className="px-3.5 py-3 text-cream/25 text-xs font-body text-center">Nenhum resultado</p>
-              )}
-
-              {filtered.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleSelect(opt.value)}
-                  className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-left font-body text-xs transition-all duration-150 ${
-                    value === opt.value
-                      ? 'bg-gold-primary/10 text-gold-light'
-                      : 'text-cream/60 hover:bg-white/[0.04] hover:text-cream/90'
-                  }`}
-                >
-                  {opt.icon && <span className="flex-shrink-0">{opt.icon}</span>}
-                  <span className="flex-1 truncate">{opt.label}</span>
-                  {value === opt.value && (
-                    <CheckIcon size={12} weight="bold" className="text-gold-light flex-shrink-0" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2 h-10 px-4 rounded-lg border font-body text-xs uppercase tracking-wider transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+        isActive || isOpen
+          ? 'border-gold-light/50 bg-gold-primary/10 text-gold-light'
+          : 'border-white/10 bg-white/[0.03] text-cream/60 hover:border-white/20 hover:text-cream/80'
+      }`}
+    >
+      {label}
+      <CaretDown
+        size={10}
+        weight="bold"
+        className={`opacity-60 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+      />
+    </button>
   )
 }
 
-/* ── Dark WineProductCard ──────────────────────────────────────────── */
+/* ── Dark-theme popover panel ────────────────────────────────── */
+function DarkPanel({
+  children,
+  alignRight = false,
+}: {
+  children: React.ReactNode
+  alignRight?: boolean
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -4, scale: 0.97 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className={`absolute top-full mt-2 z-50 min-w-[190px] max-w-[min(280px,calc(100vw-48px))] rounded-xl border border-gold-light/20 overflow-hidden ${
+        alignRight ? 'right-0' : 'left-0'
+      }`}
+      style={{
+        background: 'linear-gradient(160deg, #1E0808 0%, #140606 100%)',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.65), 0 0 0 1px rgba(200,160,74,0.06)',
+      }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+/* ── Dark-theme popover option ───────────────────────────────── */
+function DarkOpt({
+  label,
+  active,
+  onClick,
+  icon,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+  icon?: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left font-body text-xs transition-colors ${
+        active
+          ? 'bg-gold-primary/10 text-gold-light'
+          : 'text-cream/60 hover:bg-white/[0.04] hover:text-cream/90'
+      }`}
+    >
+      <span
+        className={`w-[5px] h-[5px] rounded-full flex-shrink-0 transition-colors ${
+          active ? 'bg-gold-light' : 'bg-white/20'
+        }`}
+      />
+      {icon && <span className="flex-shrink-0">{icon}</span>}
+      <span className="flex-1 truncate">{label}</span>
+      {active && <CheckIcon size={11} weight="bold" className="text-gold-light flex-shrink-0" />}
+    </button>
+  )
+}
+
+/* ── Wine product card (dark) ────────────────────────────────── */
 function WineProductCard({ produto, index }: { produto: VinhoProduto; index: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true, margin: '-40px' })
@@ -285,7 +221,7 @@ function WineProductCard({ produto, index }: { produto: VinhoProduto; index: num
           <img
             src={imgSrc}
             alt={produto.nome}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
             loading="lazy"
             onError={(e) => {
               ;(e.target as HTMLImageElement).src = WINE_BOTTLE_PLACEHOLDER
@@ -304,7 +240,6 @@ function WineProductCard({ produto, index }: { produto: VinhoProduto; index: num
               <span className="type-overline text-[8px]">Destaque</span>
             </div>
           )}
-          {/* Nacionalidade ribbon — top right */}
           {nac && (
             <div
               className="absolute top-3 right-0 flex items-center gap-2 pl-3 pr-3 py-1.5 rounded-l-full"
@@ -317,28 +252,19 @@ function WineProductCard({ produto, index }: { produto: VinhoProduto; index: num
                 boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
               }}
             >
-              {nac.imagemUrl ? (
-                <img
-                  src={nac.imagemUrl}
-                  alt={nac.nome}
-                  className="w-5 h-[14px] rounded-[2px] object-cover flex-shrink-0 shadow-sm"
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-              ) : (
-                <img
-                  src={`https://flagcdn.com/20x15/${nac.nome.slice(0, 2).toLowerCase()}.png`}
-                  alt={nac.nome}
-                  className="w-5 h-[14px] rounded-[2px] object-cover flex-shrink-0 shadow-sm"
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-              )}
+              <img
+                src={nac.imagemUrl || `https://flagcdn.com/20x15/${nac.nome.slice(0, 2).toLowerCase()}.png`}
+                alt={nac.nome}
+                className="w-5 h-[14px] rounded-[2px] object-cover flex-shrink-0 shadow-sm"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
               <span className="font-subtitle italic text-cream text-[10px] tracking-wide">
                 {nac.nome}
               </span>
             </div>
           )}
           {hasDiscount && (
-            <div className={`absolute ${nac ? 'top-10' : 'top-3'} right-3 flex items-center gap-1 bg-bordeaux text-cream px-2 py-1 rounded-full transition-all`}>
+            <div className={`absolute ${nac ? 'top-10' : 'top-3'} right-3 flex items-center gap-1 bg-bordeaux text-cream px-2 py-1 rounded-full`}>
               <TagIcon size={9} weight="fill" />
               <span className="type-overline text-[8px]">Oferta</span>
             </div>
@@ -352,7 +278,6 @@ function WineProductCard({ produto, index }: { produto: VinhoProduto; index: num
 
         {/* Body */}
         <div className="p-4 flex flex-col gap-3 flex-1">
-          {/* Tipos tags */}
           {tiposList.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {tiposList.map((t) => (
@@ -400,7 +325,6 @@ function WineProductCard({ produto, index }: { produto: VinhoProduto; index: num
               <p className="type-overline text-cream/25 text-[9px]">{produto.unidadeMedida}</p>
             </div>
 
-            {/* Add to cart */}
             <button
               onClick={handleAdd}
               className={`flex items-center gap-1 type-overline text-[9px] px-3 py-2 rounded-full border transition-all duration-300 ${
@@ -445,18 +369,21 @@ function WineProductCard({ produto, index }: { produto: VinhoProduto; index: num
   )
 }
 
-/* ── Page Component ────────────────────────────────────────────────── */
+/* ── Page component ──────────────────────────────────────────── */
 export default function VinhosPage() {
-  /* modals */
   const [showHarmonizacoes, setShowHarmonizacoes] = useState(false)
 
-  /* filters */
+  /* filter options */
   const [filtros, setFiltros] = useState<FiltrosDto | null>(null)
+
+  /* filter state */
   const [searchInput, setSearchInput] = useState('')
   const [busca, setBusca] = useState('')
   const [marca, setMarca] = useState('')
   const [nacionalidadeId, setNacionalidadeId] = useState<number | ''>('')
   const [tipo, setTipo] = useState('')
+  const [sortIdx, setSortIdx] = useState(0)
+  const [destaqueFilter, setDestaqueFilter] = useState(false)
 
   /* products */
   const [produtos, setProdutos] = useState<VinhoProduto[]>([])
@@ -467,28 +394,42 @@ export default function VinhosPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /* debounce search input → busca */
+  /* popover */
+  const [openPopover, setOpenPopover] = useState<PopoverId | null>(null)
+  const filterRowRef = useRef<HTMLDivElement>(null)
+
+  /* close popover on outside click */
+  useEffect(() => {
+    if (!openPopover) return
+    const handler = (e: MouseEvent) => {
+      if (filterRowRef.current && !filterRowRef.current.contains(e.target as Node)) {
+        setOpenPopover(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [openPopover])
+
+  /* debounce search */
   useEffect(() => {
     const t = setTimeout(() => setBusca(searchInput), 400)
     return () => clearTimeout(t)
   }, [searchInput])
 
-  /* fetch filter options once */
+  /* fetch filter options */
   useEffect(() => {
     apiFetch<FiltrosDto>('/api/catalogo/filtros').then((res) => {
       if (res.success) setFiltros(res.data)
     })
   }, [])
 
-  /* fetch wines whenever filters / page change */
+  /* main fetch */
   useEffect(() => {
-    if (page === 1) {
-      setLoading(true)
-    } else {
-      setLoadingMore(true)
-    }
+    if (page === 1) setLoading(true)
+    else setLoadingMore(true)
     setError(null)
 
+    const sort = SORT_OPTIONS[sortIdx]
     const params = new URLSearchParams({
       categoria: 'Vinhos',
       page: String(page),
@@ -498,11 +439,16 @@ export default function VinhosPage() {
     if (marca) params.set('marca', marca)
     if (nacionalidadeId !== '') params.set('nacionalidadeId', String(nacionalidadeId))
     if (tipo) params.set('tipo', tipo)
+    if (destaqueFilter) params.set('destaque', 'true')
+    if (sortIdx > 0) {
+      params.set('ordenarPor', sort.ordenarPor)
+      params.set('ordem', sort.ordem)
+    }
 
     apiFetch<PagedResult<VinhoProduto>>(`/api/produtos?${params}`)
       .then((res) => {
         if (res.success) {
-          setProdutos(prev => page === 1 ? res.data.items : [...prev, ...res.data.items])
+          setProdutos((prev) => (page === 1 ? res.data.items : [...prev, ...res.data.items]))
           setTotalPages(res.data.totalPages)
           setTotalCount(res.data.totalCount)
         } else {
@@ -514,20 +460,31 @@ export default function VinhosPage() {
         setLoading(false)
         setLoadingMore(false)
       })
-  }, [busca, marca, nacionalidadeId, tipo, page])
+  }, [busca, marca, nacionalidadeId, tipo, sortIdx, destaqueFilter, page])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchInput('')
     setBusca('')
     setMarca('')
     setNacionalidadeId('')
     setTipo('')
+    setSortIdx(0)
+    setDestaqueFilter(false)
     setPage(1)
-  }
+    setOpenPopover(null)
+  }, [])
 
-  const hasActiveFilters = busca || marca || nacionalidadeId !== '' || tipo
+  const hasActiveFilters = !!(busca || marca || nacionalidadeId !== '' || tipo || destaqueFilter || sortIdx !== 0)
 
-  /* ── Render ────────────────────────────────────────────────────────── */
+  /* derived labels */
+  const sortLabel = sortIdx === 0 ? 'Ordenar' : SORT_OPTIONS[sortIdx].label
+  const tipoLabel = tipo || 'Tipo'
+  const origemLabel = (() => {
+    if (nacionalidadeId === '') return 'Origem'
+    const found = filtros?.nacionalidades.find((n) => n.id === nacionalidadeId)
+    return found ? found.nome : 'Origem'
+  })()
+
   return (
     <>
       <section
@@ -545,7 +502,7 @@ export default function VinhosPage() {
         />
 
         <div className="max-w-[1400px] mx-auto relative z-10">
-          {/* ── Header ─────────────────────────────────────────────── */}
+          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -581,7 +538,7 @@ export default function VinhosPage() {
 
           <SectionDivider dark className="mb-10" />
 
-          {/* ── Filter bar (dark theme) ────────────────────────────── */}
+          {/* ── Filter bar ── */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -589,12 +546,13 @@ export default function VinhosPage() {
             transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
             className="mb-10"
           >
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Busca */}
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <div ref={filterRowRef} className="flex flex-col gap-3">
+
+              {/* Row 1: Search */}
+              <div className="relative">
                 <MagnifyingGlass
                   size={16}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gold-light/40"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gold-light/40 pointer-events-none"
                 />
                 <input
                   type="text"
@@ -604,67 +562,154 @@ export default function VinhosPage() {
                     setSearchInput(e.target.value)
                     setPage(1)
                   }}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gold-light/15 bg-white/[0.03] text-cream font-body text-sm placeholder:text-cream/30 focus:outline-none focus:border-gold-light/40 focus:bg-white/[0.05] transition-all duration-300"
+                  className="w-full h-10 pl-10 pr-10 rounded-lg border border-gold-light/15 bg-white/[0.03] text-cream font-body text-sm placeholder:text-cream/30 focus:outline-none focus:border-gold-light/40 focus:bg-white/[0.05] transition-all duration-300"
                 />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchInput(''); setBusca(''); setPage(1) }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-cream/30 hover:text-cream/60 transition-colors"
+                  >
+                    <XIcon size={13} weight="bold" />
+                  </button>
+                )}
               </div>
 
-              {/* Marca */}
-              {filtros && filtros.marcas.length > 0 && (
-                <FilterSelect
-                  placeholder="Marca"
-                  value={marca}
-                  onChange={(v) => { setMarca(v); setPage(1) }}
-                  options={filtros.marcas.filter(Boolean).map((m) => ({ value: m, label: m }))}
-                />
-              )}
-
-              {/* Tipo */}
-              {filtros && filtros.tipos.length > 0 && (
-                <FilterSelect
-                  placeholder="Tipo"
-                  value={tipo}
-                  onChange={(v) => { setTipo(v); setPage(1) }}
-                  options={filtros.tipos.map((t) => ({ value: t, label: t }))}
-                />
-              )}
-
-              {/* Origem */}
-              {filtros && filtros.nacionalidades.length > 0 && (
-                <FilterSelect
-                  placeholder="Origem"
-                  value={nacionalidadeId === '' ? '' : String(nacionalidadeId)}
-                  onChange={(v) => { setNacionalidadeId(v ? Number(v) : ''); setPage(1) }}
-                  options={filtros.nacionalidades.map((n) => ({
-                    value: String(n.id),
-                    label: n.nome,
-                    icon: (
-                      <img
-                        src={n.imagemUrl || `https://flagcdn.com/20x15/${n.nome.slice(0, 2).toLowerCase()}.png`}
-                        alt={n.nome}
-                        className="w-[18px] h-[13px] rounded-[2px] object-cover"
-                        style={{ imageRendering: 'crisp-edges' }}
-                      />
-                    ),
-                  }))}
-                />
-              )}
-
-              {/* Limpar filtros */}
-              {hasActiveFilters && (
+              {/* Row 2: Filter buttons */}
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2">
+                {/* Destaques toggle */}
                 <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gold-light/25 text-gold-light/80 font-body text-[11px] uppercase tracking-widest hover:bg-gold-light/10 hover:border-gold-light/40 transition-all duration-300"
+                  type="button"
+                  onClick={() => { setDestaqueFilter((d) => !d); setPage(1) }}
+                  className={`flex items-center justify-between sm:justify-start gap-2 h-10 px-4 rounded-lg border font-body text-xs uppercase tracking-wider transition-all duration-200 whitespace-nowrap ${
+                    destaqueFilter
+                      ? 'border-gold-light/50 bg-gold-primary/10 text-gold-light'
+                      : 'border-white/10 bg-white/[0.03] text-cream/60 hover:border-white/20 hover:text-cream/80'
+                  }`}
                 >
-                  <XIcon size={11} weight="bold" />
-                  Limpar
+                  <StarIcon size={11} weight={destaqueFilter ? 'fill' : 'regular'} />
+                  Destaques
                 </button>
-              )}
+
+                {/* Separator (desktop) */}
+                <div className="hidden sm:block w-px h-5 bg-white/10 flex-shrink-0" />
+
+                {/* Ordenar */}
+                <div className="relative flex-shrink-0">
+                  <DarkFilterBtn
+                    label={sortLabel}
+                    isActive={sortIdx !== 0}
+                    isOpen={openPopover === 'sort'}
+                    onClick={() => setOpenPopover((o) => (o === 'sort' ? null : 'sort'))}
+                  />
+                  <AnimatePresence>
+                    {openPopover === 'sort' && (
+                      <DarkPanel>
+                        {SORT_OPTIONS.map((opt, i) => (
+                          <DarkOpt
+                            key={i}
+                            label={opt.label}
+                            active={sortIdx === i}
+                            onClick={() => { setSortIdx(i); setPage(1); setOpenPopover(null) }}
+                          />
+                        ))}
+                      </DarkPanel>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Tipo */}
+                {filtros && filtros.tipos.length > 0 && (
+                  <div className="relative flex-shrink-0">
+                    <DarkFilterBtn
+                      label={tipoLabel}
+                      isActive={tipo !== ''}
+                      isOpen={openPopover === 'tipo'}
+                      onClick={() => setOpenPopover((o) => (o === 'tipo' ? null : 'tipo'))}
+                    />
+                    <AnimatePresence>
+                      {openPopover === 'tipo' && (
+                        <DarkPanel>
+                          <DarkOpt
+                            label="Todos os tipos"
+                            active={tipo === ''}
+                            onClick={() => { setTipo(''); setPage(1); setOpenPopover(null) }}
+                          />
+                          <div className="h-px bg-white/[0.06] mx-2" />
+                          {filtros.tipos.map((t) => (
+                            <DarkOpt
+                              key={t}
+                              label={t}
+                              active={tipo === t}
+                              onClick={() => { setTipo(t); setPage(1); setOpenPopover(null) }}
+                            />
+                          ))}
+                        </DarkPanel>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                {/* Origem */}
+                {filtros && filtros.nacionalidades.length > 0 && (
+                  <div className="relative flex-shrink-0">
+                    <DarkFilterBtn
+                      label={origemLabel}
+                      isActive={nacionalidadeId !== ''}
+                      isOpen={openPopover === 'origem'}
+                      onClick={() => setOpenPopover((o) => (o === 'origem' ? null : 'origem'))}
+                    />
+                    <AnimatePresence>
+                      {openPopover === 'origem' && (
+                        <DarkPanel>
+                          <DarkOpt
+                            label="Todas as origens"
+                            active={nacionalidadeId === ''}
+                            onClick={() => { setNacionalidadeId(''); setPage(1); setOpenPopover(null) }}
+                          />
+                          <div className="h-px bg-white/[0.06] mx-2" />
+                          <div className="max-h-52 overflow-y-auto">
+                            {filtros.nacionalidades.map((n) => (
+                              <DarkOpt
+                                key={n.id}
+                                label={n.nome}
+                                active={nacionalidadeId === n.id}
+                                onClick={() => { setNacionalidadeId(n.id); setPage(1); setOpenPopover(null) }}
+                                icon={
+                                  <img
+                                    src={n.imagemUrl || `https://flagcdn.com/20x15/${n.nome.slice(0, 2).toLowerCase()}.png`}
+                                    alt={n.nome}
+                                    className="w-[18px] h-[13px] rounded-[2px] object-cover"
+                                    style={{ imageRendering: 'crisp-edges' }}
+                                  />
+                                }
+                              />
+                            ))}
+                          </div>
+                        </DarkPanel>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                {/* Clear */}
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1.5 h-10 px-4 rounded-lg border border-gold-light/25 text-gold-light/80 font-body text-xs uppercase tracking-wider hover:bg-gold-light/10 hover:border-gold-light/40 transition-all duration-300 whitespace-nowrap"
+                  >
+                    <XIcon size={11} weight="bold" />
+                    Limpar
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
 
           {/* Results count */}
           {!loading && !error && (
             <motion.p
+              key={totalCount}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="type-caption text-cream/40 not-italic mb-6 text-sm"
@@ -749,7 +794,6 @@ export default function VinhosPage() {
               )}
             </>
           )}
-
         </div>
       </section>
 

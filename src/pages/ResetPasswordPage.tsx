@@ -13,10 +13,10 @@ import {
 } from '@phosphor-icons/react'
 import { forgotPassword, resetPassword } from '../services/auth'
 import { useAuth } from '../context/AuthContext'
+import { EASE } from '../lib/motion'
 
 type Step = 'request' | 'sent' | 'reset' | 'done'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()

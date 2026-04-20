@@ -4,9 +4,9 @@ import { MagnifyingGlassIcon, StarIcon, XIcon, CaretDownIcon } from '@phosphor-i
 import { apiFetch } from '../../services/api';
 import { type ProdutoPublico } from '../catalogo/ProdutoCard';
 import CervejaCard from './CervejaCard';
+import { EASE } from '../../lib/motion'
 
 const GOLD = '#DFA62B';
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 interface PagedResult<T> {
   items: T[];

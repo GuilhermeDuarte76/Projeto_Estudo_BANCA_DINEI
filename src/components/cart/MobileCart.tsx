@@ -11,9 +11,9 @@ import { useAuth } from '../../context/AuthContext';
 import { type UserEndereco } from '../../services/usuarios';
 import { createPedido } from '../../services/pedidos';
 import DeliveryModal from './DeliveryModal';
+import { EASE } from '../../lib/motion'
+import { WHATSAPP_NUMBER } from '../../config/constants'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
-const WHATSAPP_NUMBER = '5534991633698';
 const PAYMENT_METHODS = ['Pix', 'Cartão', 'Dinheiro'];
 
 export default function MobileCart() {

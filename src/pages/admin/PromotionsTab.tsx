@@ -19,8 +19,8 @@ import {
 import { getProducts, type Product } from '../../services/admin'
 import PromotionForm from '../../components/admin/PromotionForm'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 function getStatus(p: Promocao): { label: string; cls: string } {
   const now = new Date()

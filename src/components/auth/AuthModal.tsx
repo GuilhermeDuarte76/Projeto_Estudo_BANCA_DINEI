@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XIcon, UserIcon, EnvelopeIcon, LockSimpleIcon, EyeIcon, EyeClosedIcon, WarningCircleIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useAuth, useAuthModal } from '../../context/AuthContext'
+import { EASE } from '../../lib/motion'
 
 type Tab = 'login' | 'cadastro'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 const CLOSE_DELAY = 300
 
 // Stable icon elements — created once, never recreated on re-render

@@ -8,8 +8,8 @@ import {
   type UserEndereco, type UserEnderecoInput,
   getEnderecos, createEndereco,
 } from '../../services/usuarios';
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 const ESTADOS_BR = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',

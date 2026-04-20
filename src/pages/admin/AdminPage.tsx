@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   PackageIcon, ClipboardTextIcon, UsersIcon, TagIcon, StorefrontIcon,
@@ -10,8 +9,8 @@ import OrdersTab from './OrdersTab'
 import PromotionsTab from './PromotionsTab'
 import StoresTab from './StoresTab'
 import UsersTab from './UsersTab'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 type Tab = 'products' | 'orders' | 'promotions' | 'stores' | 'users'
 
@@ -32,11 +31,8 @@ const TAB_META: Record<Tab, { title: string; subtitle: string }> = {
 }
 
 export default function AdminPage() {
-  const { user, isLoading } = useAuth()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('products')
-
-  if (isLoading) return null
-  if (!user || user.role !== 'Admin') return <Navigate to="/" replace />
 
   const meta = TAB_META[activeTab]
 

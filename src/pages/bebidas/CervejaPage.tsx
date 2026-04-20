@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CervejariaLouvada from '../../components/louvada/CervejariaLouvada';
 import louvadaLogo from '../../assets/cervejaria-louvada.png';
 import CervejaCatalog from '../../components/cervejas/CervejaCatalog';
+import { EASE } from '../../lib/motion'
 
 const novaVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploads/videos/Video_Generation_Complete1-ezgif.com-reverse-video.mp4';
 
@@ -13,7 +14,6 @@ const hopLagerVideo = 'https://pub-2a319a86ab4845a088e34b4b2a6027be.r2.dev/uploa
 const BG      = '#000000';
 const GOLD    = '#DFA62B';
 const HDR_BG  = '#6B5C4E';
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 /* ── helpers ──────────────────────────────────────────────── */
 

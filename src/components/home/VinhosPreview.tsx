@@ -13,8 +13,8 @@ import { apiFetch } from '../../services/api'
 import { useCart } from '../../context/CartContext'
 import { type ProdutoPublico } from '../catalogo/ProdutoCard'
 import SectionDivider from '../layout/SectionDivider'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 /* ── Generic wine-bottle SVG placeholder ───────────────────────────── */
 const WINE_BOTTLE_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(

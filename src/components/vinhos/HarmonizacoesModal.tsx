@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XIcon, WineIcon, CheeseIcon, LeafIcon } from '@phosphor-icons/react';
 import { HARMONIZACOES } from '../../data/tabuas';
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 const WINE_ICONS: Record<string, React.ElementType> = {
   rose: WineIcon,

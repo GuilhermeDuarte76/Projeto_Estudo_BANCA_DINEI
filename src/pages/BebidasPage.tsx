@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { DropIcon, FlaskIcon, WineIcon, BeerBottleIcon } from '@phosphor-icons/react'
+import { EASE } from '../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 const CATEGORIAS = [
   {

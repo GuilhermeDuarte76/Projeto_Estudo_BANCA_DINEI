@@ -6,9 +6,9 @@ import videoVinho from '../../assets/vinho.mp4';
 import imgFrios from '../../assets/frios.jpg';
 import imgQueijo from '../../assets/queijo.jpg';
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 import { CheeseIcon, CakeIcon, WineIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import SectionDivider from '../layout/SectionDivider';
+import { EASE } from '../../lib/motion'
 
 const PILARES = [
   {

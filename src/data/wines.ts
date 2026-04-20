@@ -8,6 +8,7 @@ export interface Wine {
   tier: WineTier;
   country: string;
   countryCode: string;
+  imagemUrl?: string;
 }
 
 export const COUNTRIES = [

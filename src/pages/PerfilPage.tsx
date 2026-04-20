@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   UserCircleIcon, MapPinIcon, PhoneIcon, PlusIcon,
@@ -14,8 +13,8 @@ import {
   getContatos, createContato, updateContato, setContatoPrincipal, deleteContato,
   getEnderecos, createEndereco, updateEndereco, setEnderecoPrincipal, deleteEndereco,
 } from '../services/usuarios'
+import { EASE } from '../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 const TIPOS_CONTATO: TipoContato[] = ['Celular', 'Fixo', 'WhatsApp']
 
@@ -396,7 +395,7 @@ function Toast({ message, type, onDone }: { message: string; type: 'success' | '
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PerfilPage() {
-  const { user, isAuthenticated, isLoading } = useAuth()
+  const { user } = useAuth()
 
   // Contatos state
   const [contatos, setContatos] = useState<UserContato[]>([])
@@ -516,9 +515,6 @@ export default function PerfilPage() {
       setEnderecos((prev) => prev.map((e) => ({ ...e, isPrincipal: e.id === id })))
     }
   }
-
-  if (isLoading) return null
-  if (!isAuthenticated) return <Navigate to="/" replace />
 
   return (
     <section className="min-h-screen bg-dark-warm pt-24 pb-16 px-4">

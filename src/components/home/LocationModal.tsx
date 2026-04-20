@@ -8,8 +8,8 @@ import {
   CrownIcon,
   StorefrontIcon,
 } from '@phosphor-icons/react'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 const LOCATIONS = [
   {

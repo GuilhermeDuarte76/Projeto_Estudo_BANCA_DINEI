@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { WarningCircleIcon, XIcon } from '@phosphor-icons/react'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 interface Props {
   open: boolean

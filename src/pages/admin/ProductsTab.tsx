@@ -21,8 +21,8 @@ import {
 } from '../../services/admin'
 import ProductForm from '../../components/admin/ProductForm'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 // ── FilterSelect ──────────────────────────────────────────────────────────────
 interface FilterSelectProps {

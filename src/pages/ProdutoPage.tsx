@@ -14,10 +14,10 @@ import { apiFetch } from '../services/api'
 import { useCart } from '../context/CartContext'
 import SectionDivider from '../components/layout/SectionDivider'
 import { type ProdutoPublico } from '../components/catalogo/ProdutoCard'
+import { EASE } from '../lib/motion'
+import { WHATSAPP_NUMBER } from '../config/constants'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 const PLACEHOLDER = 'https://picsum.photos/seed/produto/800/600'
-const WHATSAPP_NUMBER = '5534991633698'
 
 const fmt = (val: number) => val.toFixed(2).replace('.', ',')
 

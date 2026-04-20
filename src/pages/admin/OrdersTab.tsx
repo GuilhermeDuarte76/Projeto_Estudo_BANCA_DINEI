@@ -11,8 +11,8 @@ import {
   getPedidos,
   updatePedidoStatus,
 } from '../../services/pedidos'
+import { EASE } from '../../lib/motion'
 
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
 
 type StatusFilter = PedidoStatus | 'Todos'
 
