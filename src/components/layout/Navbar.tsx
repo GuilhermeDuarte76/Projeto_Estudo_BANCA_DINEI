@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon, UserCircleIcon, SignOutIcon, IdentificationCardIcon, ClipboardTextIcon, GearIcon } from '@phosphor-icons/react';
+import {
+  ListIcon, XIcon, ShoppingCartIcon, CaretDownIcon, HouseSimpleIcon,
+  UserCircleIcon, SignOutIcon, IdentificationCardIcon, ClipboardTextIcon,
+  GearIcon, CheeseIcon, KnifeIcon, CakeIcon, LeafIcon, WineIcon,
+} from '@phosphor-icons/react';
 import logo from '../../assets/logo.png';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { EASE } from '../../lib/motion'
-
+import { EASE } from '../../lib/motion';
 
 type SubLink = { label: string; href: string };
 type NavLink = { label: string; href: string; children?: SubLink[] };
@@ -26,6 +29,14 @@ const NAV_LINKS: NavLink[] = [
   { label: 'Bebidas',           href: '/bebidas', children: BEBIDAS_SUBITENS },
 ];
 
+const MOBILE_NAV_ICONS = [
+  { href: '/frios',           Icon: CheeseIcon, label: 'Frios'    },
+  { href: '/tabuas',          Icon: KnifeIcon,  label: 'Tábuas'   },
+  { href: '/doces',           Icon: CakeIcon,   label: 'Doces'    },
+  { href: '/graos-castanhas', Icon: LeafIcon,   label: 'Grãos'    },
+  { href: '/bebidas',         Icon: WineIcon,   label: 'Bebidas'  },
+] as const;
+
 export default function Navbar() {
   const [scrolled, setScrolled]         = useState(false);
   const [menuOpen, setMenuOpen]         = useState(false);
@@ -33,8 +44,8 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate    = useNavigate();
+  const location    = useLocation();
   const { totalItems, openCart, setMobileMenuOpen } = useCart();
   const { user, isAuthenticated, openAuthModal, signOut } = useAuth();
 
@@ -147,9 +158,9 @@ export default function Navbar() {
               </motion.div>
             )}
           </AnimatePresence>
+
           {NAV_LINKS.map((link) =>
             link.children ? (
-              /* ── Bebidas com dropdown ── */
               <div
                 key={link.href}
                 className="relative"
@@ -181,11 +192,7 @@ export default function Navbar() {
                       transition={{ duration: 0.22, ease: EASE }}
                       className="absolute top-full left-1/2 -translate-x-1/2 mt-4 bg-dark-warm/95 backdrop-blur-xl border border-gold-primary/25 rounded-2xl py-2 min-w-[180px] shadow-gold overflow-hidden"
                     >
-                      {/* seta decorativa */}
-                      <div
-                        className="absolute -top-[6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-dark-warm border-l border-t border-gold-primary/25"
-                      />
-
+                      <div className="absolute -top-[6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-dark-warm border-l border-t border-gold-primary/25" />
                       {link.children.map((sub, si) => (
                         <motion.button
                           key={sub.href}
@@ -205,7 +212,6 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             ) : (
-              /* ── Links normais ── */
               <button
                 key={link.href}
                 onClick={() => handleLink(link.href)}
@@ -219,7 +225,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Desktop user button */}
+        {/* Desktop user menu */}
         <div ref={userMenuRef} className="hidden md:block relative flex-shrink-0">
           {isAuthenticated ? (
             <>
@@ -318,35 +324,29 @@ export default function Navbar() {
           </AnimatePresence>
         </button>
 
-        {/* Mobile tagline / back home */}
-        <div className="md:hidden flex-1 flex justify-center">
-          <AnimatePresence mode="wait">
-            {location.pathname !== '/' ? (
+        {/* Mobile Quick-Nav icons */}
+        <div className="md:hidden flex-1 flex items-center justify-center gap-0.5">
+          {MOBILE_NAV_ICONS.map(({ href, Icon, label }) => {
+            const active = isActive(href);
+            return (
               <motion.button
-                key="mobile-home"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: EASE }}
-                onClick={() => navigate('/')}
-                className="flex items-center gap-1.5 type-overline text-[9px] text-cream/50 hover:text-gold-light tracking-widest transition-colors duration-300"
+                key={href}
+                onClick={() => handleLink(href)}
+                aria-label={label}
+                title={label}
+                whileTap={{ scale: 0.82 }}
+                className={`p-1.5 -mx-0.5 rounded-full transition-colors duration-300 ${
+                  active ? 'text-gold-light' : 'text-cream/35 hover:text-cream/60'
+                }`}
               >
-                <HouseSimpleIcon size={11} weight="fill" />
-                Início
+                <div className={`w-[28px] h-[28px] rounded-full flex items-center justify-center transition-all duration-300 ${
+                  active ? 'bg-gold-primary/20 ring-1 ring-gold-primary/30' : ''
+                }`}>
+                  <Icon size={14} weight={active ? 'fill' : 'regular'} />
+                </div>
               </motion.button>
-            ) : (
-              <motion.span
-                key="mobile-tagline"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: EASE }}
-                className="type-overline text-gold-light/60 text-[9px] tracking-widest"
-              >
-                Delicatessen Premium
-              </motion.span>
-            )}
-          </AnimatePresence>
+            );
+          })}
         </div>
 
         {/* Mobile hamburger */}
@@ -393,7 +393,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
               className="fixed inset-0 z-40 bg-dark-warm/60 backdrop-blur-sm"
-              onClick={() => closeMenu()}
+              onClick={closeMenu}
             />
 
             <motion.aside
@@ -403,11 +403,11 @@ export default function Navbar() {
               transition={{ duration: 0.48, ease: EASE }}
               className="fixed top-0 right-0 bottom-0 z-[45] w-[82vw] max-w-[320px] bg-dark-warm flex flex-col border-l border-gold-primary/20"
             >
-              {/* Header drawer */}
+              {/* Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-gold-primary/15">
                 <img src={logo} alt="Banca do Dinei" className="h-8 w-auto opacity-90" />
                 <button
-                  onClick={() => closeMenu()}
+                  onClick={closeMenu}
                   aria-label="Fechar menu"
                   className="w-9 h-9 flex items-center justify-center rounded-full border border-gold-primary/25 text-cream/50 hover:text-gold-light hover:border-gold-primary/60 transition-all duration-300"
                 >
@@ -415,116 +415,116 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Nav links */}
-              <nav className="flex-1 px-6 pt-6 pb-2 flex flex-col overflow-y-auto">
-                {NAV_LINKS.map((link, i) => (
-                  <motion.div
-                    key={link.href}
-                    initial={{ opacity: 0, x: 28 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 28 }}
-                    transition={{ delay: 0.08 + i * 0.07, duration: 0.38, ease: EASE }}
-                    className="border-b border-gold-primary/10 last:border-0"
-                  >
-                    {link.children ? (
-                      /* ── Bebidas accordion ── */
-                      <div>
-                        <button
-                          onClick={() => setBebidasOpen((v) => !v)}
-                          className="group w-full flex items-center gap-4 py-5 text-left"
-                        >
-                          <span className="type-overline text-[10px] text-gold-primary/35 group-hover:text-gold-primary/80 transition-colors duration-300 w-5 shrink-0 tabular-nums">
-                            {String(i + 1).padStart(2, '0')}
-                          </span>
-                          <span className={`font-display font-bold text-[1.3rem] leading-none tracking-wide transition-colors duration-300 ${
-                            isActive(link.href) ? 'text-gold-light' : 'text-cream/75 group-hover:text-gold-light'
-                          }`}>
-                            {link.label}
-                          </span>
-                          <motion.span
-                            animate={{ rotate: bebidasOpen ? 180 : 0 }}
-                            transition={{ duration: 0.28, ease: EASE }}
-                            className="ml-auto text-gold-primary/50 group-hover:text-gold-primary/80 inline-flex transition-colors duration-300"
-                          >
-                            <CaretDownIcon size={14} weight="bold" />
-                          </motion.span>
-                        </button>
+              {/* Nav — grid de tiles */}
+              <div className="flex-1 px-5 pt-5 pb-3 overflow-y-auto">
+                <p className="type-overline text-[8px] text-gold-primary/30 tracking-[0.2em] mb-4">NAVEGAR</p>
 
-                        {/* Sub-itens workspace */}
-                        <AnimatePresence initial={false}>
-                          {bebidasOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.32, ease: EASE }}
-                              className="overflow-hidden"
-                            >
-                              <div className="relative ml-9 mb-4 flex flex-col gap-0.5">
-                                {/* linha vertical workspace */}
-                                <div className="absolute left-0 top-1 bottom-1 w-px bg-gold-primary/20" />
-
-                                {link.children.map((sub, si) => (
-                                  <motion.button
-                                    key={sub.href}
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: si * 0.05, duration: 0.25, ease: EASE }}
-                                    onClick={() => handleLink(sub.href)}
-                                    className={`group/sub relative flex items-center gap-3 pl-5 py-2.5 rounded-lg text-left transition-all duration-200 hover:bg-gold-primary/8 ${
-                                      isActive(sub.href) ? 'bg-gold-primary/10' : ''
-                                    }`}
-                                  >
-                                    {/* pontinho conector */}
-                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-px bg-gold-primary/30 group-hover/sub:bg-gold-primary/60 transition-colors duration-200" />
-
-                                    <span className={`type-overline text-[11px] tracking-wider transition-colors duration-200 ${
-                                      isActive(sub.href)
-                                        ? 'text-gold-light'
-                                        : 'text-cream/55 group-hover/sub:text-gold-light'
-                                    }`}>
-                                      {sub.label}
-                                    </span>
-                                  </motion.button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ) : (
-                      /* ── Link normal ── */
-                      <button
-                        onClick={() => handleLink(link.href)}
-                        className="group w-full flex items-center gap-4 py-5 text-left"
+                {/* Grid 2×2 — Frios, Tábuas, Doces, Grãos */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  {MOBILE_NAV_ICONS.slice(0, 4).map(({ href, Icon, label }, i) => {
+                    const active = isActive(href);
+                    return (
+                      <motion.button
+                        key={href}
+                        onClick={() => handleLink(href)}
+                        initial={{ opacity: 0, scale: 0.94, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.94, y: 10 }}
+                        transition={{ delay: 0.08 + i * 0.06, duration: 0.30, ease: EASE }}
+                        className={`flex flex-col items-center gap-2 py-[18px] px-3 rounded-xl border transition-all duration-300 ${
+                          active
+                            ? 'border-gold-light/45 bg-gold-primary/10 text-gold-light'
+                            : 'border-gold-primary/[0.12] bg-cream/[0.03] text-cream/40 hover:border-gold-primary/35 hover:bg-gold-primary/[0.06] hover:text-cream/65 hover:-translate-y-0.5'
+                        }`}
                       >
-                        <span className="type-overline text-[10px] text-gold-primary/35 group-hover:text-gold-primary/80 transition-colors duration-300 w-5 shrink-0 tabular-nums">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <span className={`font-display font-bold text-[1.3rem] leading-none tracking-wide transition-colors duration-300 ${
-                          isActive(link.href) ? 'text-gold-light' : 'text-cream/75 group-hover:text-gold-light'
-                        }`}>
-                          {link.label}
-                        </span>
-                        <span className="ml-auto text-base text-gold-primary/0 group-hover:text-gold-primary/60 translate-x-0 group-hover:translate-x-1 transition-all duration-300">
-                          →
-                        </span>
-                      </button>
-                    )}
-                  </motion.div>
-                ))}
-              </nav>
+                        <Icon
+                          size={26}
+                          weight={active ? 'fill' : 'regular'}
+                          className={active ? 'text-gold-light' : 'text-gold-primary/45'}
+                        />
+                        <span className="type-overline text-[9px] tracking-widest">{label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
 
-              {/* Footer drawer */}
-              <div className="px-6 py-6 border-t border-gold-primary/15 space-y-3">
-                {/* Auth button mobile */}
+                {/* Bebidas — full-width + accordion pills */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ delay: 0.32, duration: 0.30, ease: EASE }}
+                >
+                  <button
+                    onClick={() => setBebidasOpen((v) => !v)}
+                    className={`w-full flex items-center gap-3 px-[18px] py-[14px] rounded-xl border transition-all duration-300 ${
+                      isActive('/bebidas')
+                        ? 'border-gold-light/45 bg-gold-primary/10 text-gold-light'
+                        : 'border-gold-primary/[0.12] bg-cream/[0.03] text-cream/45 hover:border-gold-primary/35 hover:bg-gold-primary/[0.06] hover:text-cream/65'
+                    }`}
+                  >
+                    <WineIcon
+                      size={20}
+                      weight={isActive('/bebidas') ? 'fill' : 'regular'}
+                      className={isActive('/bebidas') ? 'text-gold-light' : 'text-gold-primary/50'}
+                    />
+                    <span className="type-overline text-[10px] tracking-widest">Bebidas</span>
+                    <motion.span
+                      animate={{ rotate: bebidasOpen ? 180 : 0 }}
+                      transition={{ duration: 0.25, ease: EASE }}
+                      className="ml-auto inline-flex"
+                    >
+                      <CaretDownIcon
+                        size={12}
+                        weight="bold"
+                        className={isActive('/bebidas') ? 'text-gold-light/70' : 'text-gold-primary/35'}
+                      />
+                    </motion.span>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {bebidasOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: EASE }}
+                        className="overflow-hidden"
+                      >
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          {BEBIDAS_SUBITENS.map((sub, si) => (
+                            <motion.button
+                              key={sub.href}
+                              initial={{ opacity: 0, scale: 0.95, y: 6 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              transition={{ delay: si * 0.05, duration: 0.22, ease: EASE }}
+                              onClick={() => handleLink(sub.href)}
+                              className={`py-3 px-2 rounded-lg border type-overline text-[9px] tracking-widest text-center transition-all duration-200 ${
+                                isActive(sub.href)
+                                  ? 'border-gold-light/50 bg-gold-primary/10 text-gold-light'
+                                  : 'border-gold-primary/[0.15] bg-cream/[0.02] text-cream/45 hover:border-gold-primary/40 hover:bg-gold-primary/[0.05] hover:text-gold-light/80'
+                              }`}
+                            >
+                              {sub.label}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-5 border-t border-gold-primary/15 space-y-2.5">
                 {isAuthenticated ? (
                   <>
+                    {/* Faixa nome + sair */}
                     <motion.div
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 14 }}
-                      transition={{ delay: 0.30, duration: 0.38 }}
+                      transition={{ delay: 0.28, duration: 0.38 }}
                       className="flex items-center justify-between border border-gold-primary/20 rounded-full px-5 py-3"
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -541,36 +541,39 @@ export default function Navbar() {
                         Sair
                       </button>
                     </motion.div>
-                    <motion.button
+
+                    {/* Grid 2 colunas: Perfil + Pedidos */}
+                    <motion.div
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 14 }}
-                      transition={{ delay: 0.34, duration: 0.38 }}
-                      onClick={() => { handleLink('/perfil'); }}
-                      className="flex items-center justify-center gap-2 w-full border border-gold-primary/20 text-cream/60 hover:border-gold-primary/50 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300"
+                      transition={{ delay: 0.32, duration: 0.38 }}
+                      className="grid grid-cols-2 gap-2"
                     >
-                      <IdentificationCardIcon size={13} />
-                      Meu Perfil
-                    </motion.button>
-                    <motion.button
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 14 }}
-                      transition={{ delay: 0.37, duration: 0.38 }}
-                      onClick={() => { handleLink('/pedidos'); }}
-                      className="flex items-center justify-center gap-2 w-full border border-gold-primary/20 text-cream/60 hover:border-gold-primary/50 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300"
-                    >
-                      <ClipboardTextIcon size={13} />
-                      Meus Pedidos
-                    </motion.button>
+                      <button
+                        onClick={() => handleLink('/perfil')}
+                        className="flex items-center justify-center gap-2 border border-gold-primary/[0.18] text-cream/55 hover:border-gold-primary/45 hover:text-gold-light font-body font-bold uppercase tracking-widest text-[9px] px-4 py-3 rounded-[10px] transition-all duration-300"
+                      >
+                        <IdentificationCardIcon size={13} />
+                        Perfil
+                      </button>
+                      <button
+                        onClick={() => handleLink('/pedidos')}
+                        className="flex items-center justify-center gap-2 border border-gold-primary/[0.18] text-cream/55 hover:border-gold-primary/45 hover:text-gold-light font-body font-bold uppercase tracking-widest text-[9px] px-4 py-3 rounded-[10px] transition-all duration-300"
+                      >
+                        <ClipboardTextIcon size={13} />
+                        Pedidos
+                      </button>
+                    </motion.div>
+
                     {user?.role === 'Admin' && (
                       <motion.button
                         initial={{ opacity: 0, y: 14 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 14 }}
-                        transition={{ delay: 0.40, duration: 0.38 }}
-                        onClick={() => { handleLink('/admin'); }}
-                        className="flex items-center justify-center gap-2 w-full border border-gold-primary/30 text-gold-light/70 hover:border-gold-primary/60 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full transition-all duration-300"
+                        transition={{ delay: 0.36, duration: 0.38 }}
+                        onClick={() => handleLink('/admin')}
+                        className="flex items-center justify-center gap-2 w-full border border-gold-primary/25 text-gold-light/65 hover:border-gold-primary/50 hover:text-gold-light font-body font-bold uppercase tracking-widest text-[9px] px-6 py-3 rounded-[10px] transition-all duration-300"
                       >
                         <GearIcon size={13} />
                         Configurações
@@ -582,7 +585,7 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 14 }}
-                    transition={{ delay: 0.30, duration: 0.38 }}
+                    transition={{ delay: 0.28, duration: 0.38 }}
                     onClick={() => { closeMenu(); openAuthModal(); }}
                     className="flex items-center justify-center gap-2 w-full border border-gold-primary/30 text-cream/60 hover:border-gold-primary/60 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300"
                   >
@@ -596,36 +599,37 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 14 }}
-                    transition={{ delay: 0.38, duration: 0.38 }}
+                    transition={{ delay: 0.36, duration: 0.38 }}
                     onClick={() => handleLink('/')}
-                    className="flex items-center justify-center gap-2 w-full border border-gold-primary/30 text-cream/60 hover:border-gold-primary/60 hover:text-gold-light font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300"
+                    className="flex items-center justify-center gap-2 w-full border border-gold-primary/20 text-cream/45 hover:border-gold-primary/45 hover:text-gold-light font-body font-bold uppercase tracking-widest text-[9px] px-6 py-3 rounded-full transition-all duration-300"
                   >
-                    <HouseSimpleIcon size={13} weight="fill" />
+                    <HouseSimpleIcon size={12} weight="fill" />
                     Início
                   </motion.button>
                 )}
+
+                {/* Carrinho com contagem inline */}
                 <motion.button
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 14 }}
-                  transition={{ delay: 0.46, duration: 0.38 }}
+                  transition={{ delay: 0.40, duration: 0.38 }}
                   onClick={() => { closeMenu(); openCart(); }}
-                  className="relative flex items-center justify-center gap-2.5 w-full bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300 hover:shadow-gold"
+                  className="flex items-center justify-center gap-2.5 w-full bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full transition-all duration-300 hover:shadow-gold"
                 >
                   <ShoppingCartIcon size={15} weight="fill" />
                   Meu Carrinho
                   {totalItems > 0 && (
-                    <span className="absolute -top-1.5 right-4 min-w-[18px] h-[18px] px-0.5 bg-bordeaux text-cream text-[9px] font-bold rounded-full flex items-center justify-center border border-dark-warm tabular-nums">
-                      {totalItems > 9 ? '9+' : totalItems}
-                    </span>
+                    <span className="opacity-70">· {totalItems > 9 ? '9+' : totalItems}</span>
                   )}
                 </motion.button>
+
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ delay: 0.54, duration: 0.38 }}
-                  className="text-center type-overline text-[9px] text-cream/20 tracking-widest"
+                  transition={{ delay: 0.48, duration: 0.38 }}
+                  className="text-center type-overline text-[8px] text-cream/15 tracking-[0.2em] pt-0.5"
                 >
                   Banca do Dinei · Uberlândia
                 </motion.p>
