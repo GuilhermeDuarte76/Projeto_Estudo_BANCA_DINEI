@@ -44,7 +44,7 @@ export default function CardapioPage() {
   const [atBottom, setAtBottom] = useState(false)
   const [overscrollProgress, setOverscrollProgress] = useState(0)
   const overscrollRef = useRef(0)
-  const THRESHOLD = 220
+  const THRESHOLD = 160
 
   useEffect(() => {
     document.title = 'Cardápio — Banca do Dinei'
@@ -84,11 +84,20 @@ export default function CardapioPage() {
     (c) => loading || (grouped[c.categoria] ?? []).length > 0
   )
 
-  const handleTabChange = useCallback((id: string) => {
+  const handleTabChange = useCallback((id: string, source: 'manual' | 'overscroll' = 'manual') => {
     overscrollRef.current = 0
     setOverscrollProgress(0)
     setActiveTab(id as CatId)
     setAtBottom(false)
+
+    if (source === 'overscroll') {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' })
+      })
+      return
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
@@ -125,7 +134,7 @@ export default function CardapioPage() {
       if (overscrollRef.current >= THRESHOLD) {
         overscrollRef.current = 0
         setOverscrollProgress(0)
-        handleTabChange(nextTab.id)
+        handleTabChange(nextTab.id, 'overscroll')
       }
     }
     window.addEventListener('wheel', onWheel, { passive: true })
@@ -146,7 +155,7 @@ export default function CardapioPage() {
       if (overscrollRef.current >= THRESHOLD) {
         overscrollRef.current = 0
         setOverscrollProgress(0)
-        handleTabChange(nextTab.id)
+        handleTabChange(nextTab.id, 'overscroll')
       }
     }
     window.addEventListener('touchstart', onTouchStart, { passive: true })

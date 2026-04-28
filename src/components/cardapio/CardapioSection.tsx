@@ -46,7 +46,7 @@ export default function CardapioSection({ titulo, produtos }: Props) {
         <div className="h-px mb-3" style={{ background: 'linear-gradient(to right, transparent, rgba(223,166,43,0.55), transparent)' }} />
         <motion.p
           className="text-center tracking-[0.36em] uppercase"
-          style={{ fontFamily: "'Teko', sans-serif", fontSize: 13, color: 'rgba(223,166,43,0.85)', letterSpacing: '0.36em' }}
+          style={{ fontFamily: "'Teko', sans-serif", fontSize: 13, color: 'rgba(223,166,43,0.90)', letterSpacing: '0.34em', textShadow: '0 1px 1px rgba(0,0,0,0.10)' }}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.42, ease: EASE }}
