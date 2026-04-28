@@ -39,6 +39,8 @@ const EMPTY_FORM: ProductCreateInput = {
   pesoKg: null,
   imagemUrl: null,
   destaque: false,
+  isVisivel: true,
+  isCardapio: false,
   nacionalidadeId: null,
   sabores: null,
   tipos: null,
@@ -223,6 +225,7 @@ export default function ProductForm({ open, initial, duplicateSource, loading = 
         pesoKg: initial.pesoKg ?? null,
         imagemUrl: initial.imagemUrl ?? null,
         destaque: initial.destaque ?? false,
+        isCardapio: initial.isCardapio ?? false,
         nacionalidadeId: initial.nacionalidade?.id ?? null,
         sabores: initial.sabores ?? null,
         tipos: initial.tipos ?? null,
@@ -251,6 +254,7 @@ export default function ProductForm({ open, initial, duplicateSource, loading = 
         pesoKg: duplicateSource.pesoKg ?? null,
         imagemUrl: null,
         destaque: duplicateSource.destaque ?? false,
+        isCardapio: false,
         nacionalidadeId: duplicateSource.nacionalidade?.id ?? null,
         sabores: duplicateSource.sabores ?? null,
         tipos: duplicateSource.tipos ?? null,
@@ -828,6 +832,65 @@ export default function ProductForm({ open, initial, duplicateSource, loading = 
                           </p>
                           <p className="text-cream/30 text-[10px] font-body leading-tight">
                             Exibido com prioridade no catálogo
+                          </p>
+                        </div>
+                      </button>
+                    </Field>
+                  </div>
+
+                  {/* LINHA 9 — Loja online + Cardápio */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Loja online">
+                      <button
+                        type="button"
+                        onClick={() => set('isVisivel', !form.isVisivel)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all duration-300 text-left ${
+                          form.isVisivel
+                            ? 'border-gold-primary/40 bg-gold-primary/10'
+                            : 'border-gold-primary/15 bg-white/5 hover:border-gold-primary/30'
+                        }`}
+                      >
+                        <div className={`w-10 h-5 rounded-full relative transition-colors duration-300 shrink-0 ${
+                          form.isVisivel ? 'bg-gradient-gold' : 'bg-white/10'
+                        }`}>
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-cream shadow transition-transform duration-300 ${
+                            form.isVisivel ? 'translate-x-[22px]' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="text-cream/80 text-xs font-body font-medium leading-tight">
+                            Exibir na loja online
+                          </p>
+                          <p className="text-cream/30 text-[10px] font-body leading-tight">
+                            Controla se aparece na vitrine e no catálogo do site
+                          </p>
+                        </div>
+                      </button>
+                    </Field>
+
+                    <Field label="Cardápio presencial">
+                      <button
+                        type="button"
+                        onClick={() => set('isCardapio', !form.isCardapio)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all duration-300 text-left ${
+                          form.isCardapio
+                            ? 'border-gold-primary/40 bg-gold-primary/10'
+                            : 'border-gold-primary/15 bg-white/5 hover:border-gold-primary/30'
+                        }`}
+                      >
+                        <div className={`w-10 h-5 rounded-full relative transition-colors duration-300 shrink-0 ${
+                          form.isCardapio ? 'bg-gradient-gold' : 'bg-white/10'
+                        }`}>
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-cream shadow transition-transform duration-300 ${
+                            form.isCardapio ? 'translate-x-[22px]' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="text-cream/80 text-xs font-body font-medium leading-tight">
+                            Exibir no cardápio presencial
+                          </p>
+                          <p className="text-cream/30 text-[10px] font-body leading-tight">
+                            Aparece na tela /cardapio da loja física
                           </p>
                         </div>
                       </button>

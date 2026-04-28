@@ -3,12 +3,7 @@ import { lazy, Suspense } from 'react'
 import { CrownIcon } from '@phosphor-icons/react'
 import { CartProvider } from './context/CartContext'
 import { AuthProvider } from './context/AuthContext'
-import Navbar from './components/layout/Navbar'
-import Footer from './components/layout/Footer'
-import CartDrawer from './components/cart/CartDrawer'
-import MobileCart from './components/cart/MobileCart'
-import CartFAB from './components/cart/CartFAB'
-import AuthModal from './components/auth/AuthModal'
+import MainLayout from './components/layout/MainLayout'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -28,6 +23,7 @@ const PerfilPage = lazy(() => import('./pages/PerfilPage'))
 const PedidosPage = lazy(() => import('./pages/PedidosPage'))
 const AdminPage = lazy(() => import('./pages/admin/AdminPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const CardapioPage = lazy(() => import('./pages/CardapioPage'))
 
 function PageLoader() {
   return (
@@ -42,11 +38,10 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
-          <Navbar />
           <ErrorBoundary>
-            <main>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route element={<MainLayout />}>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/frios" element={<FriosPage />} />
                   <Route path="/tabuas" element={<TabuasPage />} />
@@ -67,15 +62,11 @@ function App() {
                     <Route path="/admin" element={<AdminPage />} />
                   </Route>
                   <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </Suspense>
-            </main>
+                </Route>
+                <Route path="/cardapio" element={<CardapioPage />} />
+              </Routes>
+            </Suspense>
           </ErrorBoundary>
-          <Footer />
-          <CartDrawer />
-          <MobileCart />
-          <CartFAB />
-          <AuthModal />
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>

@@ -46,6 +46,7 @@ export interface Product {
   codigoBarras?: string
   pesoKg?: number
   destaque: boolean
+  isCardapio: boolean
   imagemUrl: string
   isAtivo: boolean
   isVisivel: boolean
@@ -69,6 +70,7 @@ export type ProductCreateInput = {
   pesoKg?: number | null
   imagemUrl: string | null
   destaque: boolean
+  isCardapio?: boolean
   nacionalidadeId?: number | null
   sabores?: string | null
   tipos?: string | null
@@ -200,18 +202,22 @@ export interface GetProductsParams {
   categoria?: string
   marca?: string
   busca?: string
+  tipo?: string
   destaque?: boolean
   isVisivel?: boolean
+  isCardapio?: boolean
 }
 
 export const getProducts = (params: GetProductsParams = {}) => {
-  const { page = 1, pageSize = 50, categoria, marca, busca, destaque, isVisivel } = params
+  const { page = 1, pageSize = 50, categoria, marca, busca, tipo, destaque, isVisivel, isCardapio } = params
   const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
   if (categoria) q.set('categoria', categoria)
   if (marca) q.set('marca', marca)
   if (busca) q.set('busca', busca)
+  if (tipo) q.set('tipo', tipo)
   if (destaque !== undefined) q.set('destaque', String(destaque))
   if (isVisivel !== undefined) q.set('isVisivel', String(isVisivel))
+  if (isCardapio !== undefined) q.set('isCardapio', String(isCardapio))
   return apiFetch<PagedResult<Product>>(`/api/admin/produtos?${q}`)
 }
 
@@ -234,3 +240,12 @@ export const getProductPriceHistory = (id: number, page = 1, pageSize = 10) =>
   apiFetch<PagedResult<PriceHistoryEntry>>(
     `/api/admin/produtos/${id}/historico-preco?page=${page}&pageSize=${pageSize}`,
   )
+
+// ── Cardápio presencial ───────────────────────────────────────────────────────
+
+export const getCardapio = (categoria?: string) => {
+  const q = new URLSearchParams()
+  if (categoria) q.set('categoria', categoria)
+  const qs = q.toString()
+  return apiFetch<Product[]>(`/api/cardapio${qs ? `?${qs}` : ''}`)
+}
