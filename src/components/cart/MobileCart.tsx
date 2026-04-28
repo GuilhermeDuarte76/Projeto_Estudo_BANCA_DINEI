@@ -87,23 +87,12 @@ export default function MobileCart() {
     setOrderLoading(true);
     setOrderError('');
 
-    // Build message and open WhatsApp before the async call to preserve the
-    // user-gesture context and avoid popup blockers.
-    const msg = buildWhatsAppMessage(
-      items,
-      totalPrice,
-      selectedPayment ?? undefined,
-      selectedDelivery,
-      selectedAddress ?? undefined,
-    );
-    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-    const waWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
-
     const res = await createPedido({
       enderecoEntregaId: selectedDelivery === 'entrega' ? (selectedAddress?.id ?? null) : null,
       formaPagamento: selectedPayment ?? undefined,
       itens: items.filter(item => item.produtoId != null).map(item => ({
         produtoId: item.produtoId as number,
+        ...(item.produtoVarianteId != null && { produtoVarianteId: item.produtoVarianteId }),
         quantidade: item.quantity,
         ...(item.promocaoId != null && { promocaoId: item.promocaoId }),
       })),
@@ -111,11 +100,21 @@ export default function MobileCart() {
 
     if (!res.success) {
       setOrderLoading(false);
-      setOrderError('Não foi possível registrar o pedido. Verifique sua conexão e tente novamente.');
-      // Fallback: if popup was blocked, try navigating directly
-      if (!waWindow) window.location.href = waUrl;
+      setOrderError(res.message || 'Não foi possível registrar o pedido. Verifique sua conexão e tente novamente.');
       return;
     }
+
+    const pedidoTotal = res.data?.total ?? totalPrice;
+    const msg = buildWhatsAppMessage(
+      items,
+      pedidoTotal,
+      selectedPayment ?? undefined,
+      selectedDelivery,
+      selectedAddress ?? undefined,
+    );
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    const waWindow = window.open(waUrl, '_blank', 'noopener,noreferrer');
+    if (!waWindow) window.location.href = waUrl;
 
     clearCart();
     setOrderLoading(false);

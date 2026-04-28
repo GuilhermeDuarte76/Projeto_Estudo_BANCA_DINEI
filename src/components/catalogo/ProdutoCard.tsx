@@ -4,6 +4,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { CrownIcon, ShoppingCartIcon, CheckIcon, TagIcon } from '@phosphor-icons/react'
 import { useCart } from '../../context/CartContext'
 import { EASE } from '../../lib/motion'
+import { trackEvent } from '../../lib/analytics'
 import type { ProdutoVariante } from '../../services/admin'
 
 export type { ProdutoVariante }
@@ -70,6 +71,7 @@ export default function ProdutoCard({ produto, index }: Props) {
     addItem({
       id: selectedVariante ? `produto-${produto.id}-v${selectedVariante.id}` : `produto-${produto.id}`,
       produtoId: produto.id,
+      produtoVarianteId: selectedVariante?.id ?? null,
       name: produto.nome,
       subtitle: selectedVariante
         ? selectedVariante.descricao
@@ -82,6 +84,7 @@ export default function ProdutoCard({ produto, index }: Props) {
       category: produto.categoria,
       promocaoId: selectedVariante ? null : (activePromo?.id ?? null),
     })
+    trackEvent('produto_adicionado', { nome: produto.nome, categoria: produto.categoria, preco: precoExibido })
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }

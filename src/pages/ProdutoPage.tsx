@@ -156,6 +156,7 @@ export default function ProdutoPage() {
     addItem({
       id: selectedVariante ? `produto-${produto.id}-v${selectedVariante.id}` : `produto-${produto.id}`,
       produtoId: produto.id,
+      produtoVarianteId: selectedVariante?.id ?? null,
       name: produto.nome,
       subtitle: selectedVariante
         ? selectedVariante.descricao

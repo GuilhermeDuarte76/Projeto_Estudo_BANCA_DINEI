@@ -13,6 +13,8 @@ export type PedidoStatus =
 export interface PedidoItem {
   id: number
   produtoId: number
+  produtoVarianteId: number | null
+  produtoVarianteLabel: string | null
   produtoNome: string
   quantidade: number
   precoUnitario: number
@@ -50,6 +52,7 @@ export interface Pedido {
 
 export interface PedidoItemInput {
   produtoId: number
+  produtoVarianteId?: number | null
   quantidade: number
   promocaoId?: number | null
 }

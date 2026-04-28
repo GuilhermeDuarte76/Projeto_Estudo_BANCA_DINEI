@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { trackEvent } from '../lib/analytics';
 
 export interface CartItem {
   id: string;
   produtoId?: number;
+  produtoVarianteId?: number | null;
   name: string;
   subtitle: string;
   price: number;
@@ -71,12 +73,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: qty } : i));
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
-  const openCart = useCallback(() => setIsOpen(true), []);
-  const closeCart = useCallback(() => setIsOpen(false), []);
-
   const totalItems = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const totalPrice = useMemo(() => items.reduce((sum, i) => sum + i.price * i.quantity, 0), [items]);
+
+  const clearCart = useCallback(() => setItems([]), []);
+  const openCart = useCallback(() => {
+    setIsOpen(true)
+    trackEvent('carrinho_aberto', { total_itens: totalItems })
+  }, [totalItems]);
+  const closeCart = useCallback(() => setIsOpen(false), []);
 
   const value = useMemo(() => ({
     items, addItem, removeItem, updateQty, clearCart,
