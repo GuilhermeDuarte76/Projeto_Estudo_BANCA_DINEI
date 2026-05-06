@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CrownIcon, ArrowDownIcon, WhatsappLogoIcon, StarIcon, MapPinIcon } from '@phosphor-icons/react';
+import { CrownIcon, StarIcon, MapPinIcon } from '@phosphor-icons/react';
 import taboaFrios from '../../assets/taboaFrios.jpg';
 import LogoReveal from './LogoReveal';
 import LocationModal from './LocationModal';
@@ -21,6 +21,17 @@ const MARQUEE_ITEMS = [
   'Doces Especiais',
   'Curadoria Premium',
   'Delicatessen',
+];
+
+const CATEGORIES = [
+  { label: 'Queijos & Frios', path: '/frios' },
+  { label: 'Tábuas', path: '/tabuas' },
+  { label: 'Doces', path: '/doces' },
+  { label: 'Grãos & Castanhas', path: '/graos-castanhas' },
+  { label: 'Vinhos', path: '/bebidas/vinhos' },
+  { label: 'Cervejas', path: '/bebidas/cerveja' },
+  { label: 'Cachaças', path: '/bebidas/cachaca' },
+  { label: 'Não Alcoólicos', path: '/bebidas/nao-alcoolicos' },
 ];
 
 const fadeUp = (delay = 0) => ({
@@ -88,27 +99,42 @@ export default function Hero() {
           </motion.p>
 
           {/* CTAs */}
-          <motion.div {...fadeUp(0.5)} className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-4">
-            <div className="flex gap-2 lg:contents">
-              <a
-                href="https://wa.me/5534991633698?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Banca%20do%20Dinei%20e%20gostaria%20de%20fazer%20um%20pedido."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex-[3] lg:flex-none flex items-center justify-center gap-2 bg-gradient-gold text-dark-warm font-body font-bold uppercase tracking-widest px-4 lg:px-8 py-3 rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-gold active:scale-[0.98] text-xs lg:text-sm"
+          <motion.div {...fadeUp(0.5)} className="flex flex-col gap-3">
+            {/* Mobile: carousel auto-scroll com fade nas bordas */}
+            <div
+              className="lg:hidden overflow-hidden group"
+              style={{
+                maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+                WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+              }}
+            >
+              <div
+                className="flex gap-2 w-max group-hover:[animation-play-state:paused]"
+                style={{ animation: 'marquee 45s linear infinite' }}
               >
-                <WhatsappLogoIcon size={14} weight="fill" />
-                <span>Fazer Pedido</span>
-                <span className="hidden lg:flex w-7 h-7 rounded-full bg-dark-warm/10 items-center justify-center transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-px">
-                  <ArrowDownIcon size={13} weight="bold" className="rotate-[-90deg]" />
-                </span>
-              </a>
+                {[...CATEGORIES, ...CATEGORIES].map((cat, i) => (
+                  <button
+                    key={`${cat.path}-${i}`}
+                    onClick={() => navigate(cat.path)}
+                    className="flex-shrink-0 border border-gold-primary/40 text-gold-light/80 font-body font-bold uppercase tracking-widest px-3 py-2 rounded-full transition-colors duration-300 hover:border-gold-light hover:text-gold-light hover:bg-gold-primary/10 active:scale-[0.97] text-[10px] whitespace-nowrap"
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <button
-                onClick={() => navigate('/tabuas')}
-                className="flex-[1] lg:flex-none flex items-center justify-center gap-2 border border-gold-primary/50 text-gold-light font-body font-bold uppercase tracking-widest px-4 lg:px-8 py-3 rounded-full transition-all duration-300 hover:border-gold-light hover:-translate-y-1 text-xs lg:text-sm"
-              >
-                Tábuas
-              </button>
+            {/* Desktop: pills estáticos em flex-wrap */}
+            <div className="hidden lg:flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.path}
+                  onClick={() => navigate(cat.path)}
+                  className="border border-gold-primary/40 text-gold-light/80 font-body font-bold uppercase tracking-widest px-4 py-2 rounded-full transition-colors duration-300 hover:border-gold-light hover:text-gold-light hover:bg-gold-primary/10 active:scale-[0.97] text-[11px] whitespace-nowrap"
+                >
+                  {cat.label}
+                </button>
+              ))}
             </div>
 
             <button
